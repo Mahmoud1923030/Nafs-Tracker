@@ -5751,9 +5751,9 @@ function initServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
 
     navigator.serviceWorker.register('/sw.js').then(reg => {
-        // A waiting worker already exists (e.g. user revisiting after deploy)
+        // A waiting worker already exists → activate it immediately
         if (reg.waiting) {
-            showUpdateBanner(reg.waiting);
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
 
         // Detect newly installed workers
@@ -5762,7 +5762,8 @@ function initServiceWorker() {
             if (!newWorker) return;
             newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    showUpdateBanner(newWorker);
+                    // Auto-activate without prompting
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
                 }
             });
         });

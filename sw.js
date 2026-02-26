@@ -1,6 +1,6 @@
 // =========================================================================
 //  Nafs Tracker – Service Worker
-//  Coordinated update: no auto-skipWaiting; client must request it.
+//  Auto-update: skipWaiting immediately so new versions activate instantly.
 //  ➜ Bump VERSION below whenever static files change to trigger an update.
 // =========================================================================
 const VERSION = 16;
@@ -72,9 +72,8 @@ self.addEventListener('install', event => {
                 ))
             )
         ]).then(() => {
-            // Do NOT call skipWaiting() here.
-            // The page will detect the waiting SW and show an update prompt.
-            // skipWaiting() is only called when the user confirms via SKIP_WAITING message.
+            // Auto-activate new version immediately
+            self.skipWaiting();
         })
     );
 });
