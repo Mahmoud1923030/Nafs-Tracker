@@ -50,6 +50,13 @@ try {
     // ignore if not supported in this environment
 }
 
+// Handle redirect result from Google sign-in (fires on page reload after redirect)
+auth.getRedirectResult().catch(err => {
+    if (err.code !== 'auth/credential-already-in-use') {
+        console.warn('[Auth] Redirect result error:', err.message);
+    }
+});
+
 // =========================================================================
 //  المتغيرات العامة
 // =========================================================================
@@ -1022,8 +1029,15 @@ function showCommitmentInfo() {
 //  Auth
 // =========================================================================
 window.signInWithGoogle = async function () {
-    try { await auth.signInWithPopup(googleProvider); }
-    catch (e) { showToast('فشل تسجيل الدخول: ' + e.message, 'error'); }
+    try {
+        // Use redirect instead of popup for better cross-origin cookie support
+        // This avoids third-party cookie blocking in modern browsers
+        await auth.signInWithRedirect(googleProvider);
+    } catch (e) {
+        // Fallback to popup if redirect fails (e.g. some desktop browsers)
+        try { await auth.signInWithPopup(googleProvider); }
+        catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
+    }
 };
 
 window.signOut = async function () {
