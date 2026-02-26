@@ -43,19 +43,12 @@ db.enablePersistence({ synchronizeTabs: true }).catch(err => {
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-// Use LOCAL persistence for faster subsequent logins - no need to re-login each session
+// Use LOCAL persistence so the user stays logged in across sessions
 try {
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => { });
 } catch (e) {
     // ignore if not supported in this environment
 }
-
-// Handle redirect result from Google sign-in (fires on page reload after redirect)
-auth.getRedirectResult().catch(err => {
-    if (err.code !== 'auth/credential-already-in-use') {
-        console.warn('[Auth] Redirect result error:', err.message);
-    }
-});
 
 // =========================================================================
 //  المتغيرات العامة
@@ -1030,13 +1023,9 @@ function showCommitmentInfo() {
 // =========================================================================
 window.signInWithGoogle = async function () {
     try {
-        // Use redirect instead of popup for better cross-origin cookie support
-        // This avoids third-party cookie blocking in modern browsers
-        await auth.signInWithRedirect(googleProvider);
+        await auth.signInWithPopup(googleProvider);
     } catch (e) {
-        // Fallback to popup if redirect fails (e.g. some desktop browsers)
-        try { await auth.signInWithPopup(googleProvider); }
-        catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
+        showToast('فشل تسجيل الدخول: ' + e.message, 'error');
     }
 };
 
