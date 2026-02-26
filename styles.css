@@ -184,13 +184,11 @@ select:focus {
     box-shadow:
         0 8px 32px var(--shadow-color),
         inset 0 1px 0 rgba(200, 170, 78, 0.06);
-    transition: all 0.4s var(--transition-smooth);
-    animation: slideInUp 0.5s var(--transition-smooth);
-    will-change: transform, opacity;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    animation: slideInUp 0.5s var(--transition-smooth) both;
 }
 
 .card:hover {
-    animation: none;
     transform: translateY(-3px);
     border-color: rgba(200, 170, 78, 0.35);
     box-shadow:
