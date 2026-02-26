@@ -1,0 +1,98 @@
+{
+    "name": "Nafs Tracker - متتبع العبادات",
+    "short_name": "Nafs Tracker",
+    "description": "تطبيق متابعة العبادات اليومية - أذكار، صلوات، قرآن، تسبيح، أحاديث",
+    "id": "/",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#081f16",
+    "theme_color": "#081f16",
+    "orientation": "any",
+    "dir": "rtl",
+    "lang": "ar",
+    "prefer_related_applications": false,
+    "categories": [
+        "lifestyle",
+        "education",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "أذكار الصباح",
+            "short_name": "الأذكار",
+            "url": "/?screen=adhkar",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "مواقيت الصلاة",
+            "short_name": "الصلاة",
+            "url": "/?screen=prayer",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "المصحف",
+            "short_name": "القرآن",
+            "url": "/?screen=quran",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "التسبيح",
+            "short_name": "تسبيح",
+            "url": "/?screen=tasbih",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

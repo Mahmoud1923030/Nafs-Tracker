@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سياسة الخصوصية – Nafs Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #071a12;
+            --bg2: #0d2b1f;
+            --gold: #c8aa4e;
+            --gold-light: #e2c97e;
+            --emerald: #2ecc71;
+            --text: #e8e0d0;
+            --text-muted: rgba(232,224,208,0.55);
+            --border: rgba(200,170,78,0.18);
+            --card: rgba(255,255,255,0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.9;
+            min-height: 100vh;
+        }
+
+        /* Background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 10%, rgba(46,204,113,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(200,170,78,0.07) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header h1 {
+            font-family: 'Amiri', serif;
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            color: var(--gold);
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.5px;
+        }
+
+        header .app-name {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .last-updated {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            background: rgba(200,170,78,0.08);
+            border: 1px solid var(--border);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+        }
+
+        /* Sections */
+        section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(4px);
+            transition: border-color 0.3s;
+        }
+
+        section:hover {
+            border-color: rgba(200,170,78,0.35);
+        }
+
+        section h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold-light);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        section h2 .icon {
+            font-size: 1.3rem;
+        }
+
+        section p {
+            color: var(--text);
+            font-size: 0.97rem;
+            margin-bottom: 0.8rem;
+        }
+
+        section p:last-child { margin-bottom: 0; }
+
+        ul {
+            padding-right: 1.2rem;
+            margin: 0.5rem 0;
+        }
+
+        ul li {
+            font-size: 0.95rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        ul li::marker {
+            color: var(--gold);
+        }
+
+        .highlight-box {
+            background: rgba(46,204,113,0.07);
+            border: 1px solid rgba(46,204,113,0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #7effc0;
+        }
+
+        .warning-box {
+            background: rgba(200,170,78,0.07);
+            border: 1px solid rgba(200,170,78,0.25);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--gold-light);
+        }
+
+        /* Contact */
+        .contact-link {
+            color: var(--gold);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(200,170,78,0.4);
+            transition: border-color 0.2s;
+        }
+
+        .contact-link:hover {
+            border-color: var(--gold);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .verse {
+            font-family: 'Amiri', serif;
+            font-size: 1.1rem;
+            color: rgba(200,170,78,0.6);
+            margin-bottom: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <div class="logo">🌙</div>
+            <h1>سياسة الخصوصية</h1>
+            <div class="app-name">Nafs Tracker – متتبع العبادات اليومية</div>
+            <div class="last-updated">آخر تحديث فبراير 2026</div>
+        </header>
+
+        <section>
+            <h2><span class="icon">📋</span> مقدمة</h2>
+            <p>
+                مرحباً بك في تطبيق <strong>Nafs Tracker</strong>. نحن نحترم خصوصيتك ونلتزم بحمايتها.
+                توضح هذه السياسة ما نجمعه من بيانات، وكيف نستخدمها، وكيف نحميها.
+            </p>
+            <p>
+                باستخدامك للتطبيق، فإنك توافق على الشروط الواردة في هذه السياسة.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="icon">📦</span> البيانات التي نجمعها</h2>
+            <p>يجمع التطبيق البيانات التالية عند تسجيل دخولك:</p>
+            <ul>
+                <li><strong>بيانات الحساب:</strong> الاسم، البريد الإلكتروني، وصورة الملف الشخصي من حساب Google.</li>
+                <li><strong>بيانات العبادات:</strong> تقدمك في الأذكار، الصلوات، قراءة القرآن، التسبيح، ويومياتك الروحية.</li>
+                <li><strong>الإعدادات:</strong> تفضيلاتك داخل التطبيق كحجم الخط وأوقات التذكير.</li>
+                <li><strong>الموقع الجغرافي (اختياري):</strong> لتحديد مواقيت الصلاة والقبلة — لا يُخزَّن على خوادمنا.</li>
+                <li><strong>بيانات الاستخدام:</strong> النقاط المكتسبة، سلاسل المواظبة، والشارات.</li>
+            </ul>
+            <div class="highlight-box">
+                ✅ لا نجمع أي بيانات حساسة كبيانات بطاقات الائتمان أو المعلومات الصحية.
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="icon">🔧</span> كيف نستخدم بياناتك</h2>
+            <p>تُستخدم البيانات حصراً من أجل:</p>
+            <ul>
+                <li>حفظ تقدمك ومزامنته عبر أجهزتك المختلفة.</li>
+                <li>عرض مواقيت الصلاة الدقيقة واتجاه القبلة بناءً على موقعك.</li>
+                <li>إرسال تذكيرات الأذكار والصلاة (إن فعّلتها).</li>
+                <li>عرض إحصائياتك وتقدمك الشخصي داخل التطبيق.</li>
+                <li>تحسين تجربة التطبيق وإصلاح الأخطاء التقنية.</li>
+            </ul>
+            <div class="warning-box">
+                🚫 لا نبيع بياناتك لأي طرف ثالث، ولا نستخدمها لأغراض إعلانية.
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="icon">☁️</span> تخزين البيانات</h2>
+            <p>
+                يستخدم التطبيق خدمة <strong>Firebase</strong> من Google لتخزين بياناتك بشكل آمن على السحابة.
+                تخضع هذه البيانات لسياسة خصوصية Google المتاحة على:
+                <a href="https://policies.google.com/privacy" class="contact-link" target="_blank">policies.google.com/privacy</a>
+            </p>
+            <ul>
+                <li>يتم تشفير جميع البيانات أثناء النقل باستخدام بروتوكول HTTPS.</li>
+                <li>يتم تخزين البيانات على خوادم Firebase في مراكز بيانات آمنة.</li>
+                <li>يمكنك حذف حسابك وبياناتك في أي وقت من إعدادات التطبيق.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="icon">🔑</span> تسجيل الدخول عبر Google</h2>
+            <p>
+                يستخدم التطبيق تسجيل الدخول عبر <strong>Google OAuth</strong> فقط.
+                لا نقوم بتخزين كلمات المرور أو إنشاء حسابات مستقلة.
+                يمكنك إلغاء صلاحية الوصول في أي وقت من إعدادات حساب Google الخاص بك.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="icon">🔔</span> الإشعارات</h2>
+            <p>
+                يطلب التطبيق إذناً لإرسال إشعارات للتذكير بالأذكار ومواقيت الصلاة.
+                هذه الإشعارات اختيارية تماماً ويمكنك تعطيلها من إعدادات جهازك في أي وقت.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="icon">📍</span> الموقع الجغرافي</h2>
+            <p>
+                يطلب التطبيق الوصول إلى موقعك الجغرافي لتحديد مواقيت الصلاة واتجاه القبلة بدقة.
+            </p>
+            <ul>
+                <li>لا يُخزَّن موقعك على خوادمنا.</li>
+                <li>يُستخدم الموقع فقط في اللحظة التي تطلب فيها مواقيت الصلاة.</li>
+                <li>يمكنك تعطيل هذا الإذن وإدخال موقعك يدوياً.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="icon">👤</span> حقوقك</h2>
+            <p>لك الحق في:</p>
+            <ul>
+                <li><strong>الاطلاع</strong> على جميع بياناتك المخزنة في التطبيق.</li>
+                <li><strong>تعديل</strong> معلوماتك الشخصية من إعدادات التطبيق.</li>
+                <li><strong>تصدير</strong> بياناتك من خيار النسخ الاحتياطي في الإعدادات.</li>
+                <li><strong>حذف</strong> حسابك وجميع بياناتك بالكامل عند الطلب.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="icon">👶</span> خصوصية الأطفال</h2>
+            <p>
+                التطبيق موجه للمستخدمين من عمر 13 سنة فأكثر.
+                لا نجمع بيانات عمدية من الأطفال دون سن 13 عاماً.
+                إذا اكتشفنا ذلك، سنحذف البيانات فوراً.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="icon">🔄</span> التحديثات على هذه السياسة</h2>
+            <p>
+                قد نقوم بتحديث سياسة الخصوصية من وقت لآخر. سنخطرك بأي تغييرات جوهرية عبر التطبيق.
+                الاستمرار في استخدام التطبيق بعد التحديث يعني موافقتك على السياسة الجديدة.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="icon">📩</span> تواصل معنا</h2>
+            <p>
+                إذا كان لديك أي استفسار حول سياسة الخصوصية أو بياناتك، يمكنك التواصل معنا على:
+            </p>
+            <p>
+                📧 <a href="mailto:nafstracker@gmail.com" class="contact-link">nafstracker@gmail.com</a>
+            </p>
+        </section>
+
+        <footer>
+            <div class="verse">﴿ إِنَّ اللَّهَ كَانَ عَلَيْكُمْ رَقِيبًا ﴾</div>
+            <p>© 2026 Nafs Tracker. جميع الحقوق محفوظة.</p>
+        </footer>
+
+    </div>
+</body>
+</html>

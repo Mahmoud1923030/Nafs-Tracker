@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Max document size guard (Firestore limit is 1 MiB; keep it sane)
+    function docSizeOk() {
+      return request.resource.data.keys().size() <= 50;
+    }
+
+    // ── Per-user document ─────────────────────────────────────────
+    // Path: /users/{userId}
+    match /users/{userId} {
+
+      // Only the owner can read their own document
+      allow read: if isOwner(userId);
+
+      // Owner can create their document (first login)
+      allow create: if isOwner(userId) && docSizeOk();
+
+      // Owner can update – but cannot change the 'uid' field
+      allow update: if isOwner(userId)
+                    && docSizeOk()
+                    && (!('uid' in request.resource.data) || request.resource.data.uid == userId);
+
+      // Owner can delete their own data
+      allow delete: if isOwner(userId);
+
+      // ── Subcollections for scalable date-keyed data ──────────────
+      match /prayerLogs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /adhkarHistory/{historyId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /dailyPoints/{dateId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /journal/{entryId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /naflLogs/{logId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ── Deny everything else by default ───────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

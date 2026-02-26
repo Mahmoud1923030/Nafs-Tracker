@@ -1,0 +1,293 @@
+/* Mobile and Responsive Fixes */
+
+/* Ensure normal document flow for scrolling */
+html {
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}
+
+body {
+    min-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    font-family: "Tajawal", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    font-size: var(--base-font);
+    line-height: 1.45;
+    color: var(--text-primary);
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+}
+
+#app,
+#content,
+main,
+.main-layout {
+    height: auto;
+    max-height: none;
+}
+
+/* Ensure body and app take full height */
+#app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#loading-screen {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.main-layout {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Fix scrollbar appearance */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(200, 170, 78, 0.35);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(200, 170, 78, 0.6);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 170, 78, 0.35) transparent;
+}
+
+/* Touch optimizations */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* -----------------------------
+   Responsive base & utilities
+   Mobile-first, then scale up
+   ----------------------------- */
+
+:root {
+    --base-font: clamp(14px, 1vw + 10px, 18px);
+    --container-max: 960px;
+    --sidebar-w: 200px;
+    --gutter: 0.5rem;
+}
+
+/* Center content on large screens and provide fluid container */
+.main-layout {
+    width: 100%;
+    max-width: min(var(--container-max), 96%);
+    margin: 0 auto;
+    display: flex;
+    gap: calc(var(--gutter) * 0.9);
+    align-items: flex-start;
+}
+
+.desktop-sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0.5rem;
+}
+
+main {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.5rem 0.5rem;
+}
+
+.main-content {
+    padding: 0 0.4rem;
+}
+
+.screen {
+    width: 100%;
+}
+
+/* Mobile bottom nav: visible on small screens only */
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Make images and media responsive */
+img,
+video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Smooth scrolling for iOS */
+main,
+#content {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* -----------------------------
+   Breakpoints
+   ----------------------------- */
+
+/* Small phones */
+@media (max-width: 480px) {
+    :root {
+        --sidebar-w: 0px;
+    }
+
+    .main-layout {
+        gap: 0.5rem;
+    }
+
+    .desktop-sidebar {
+        display: none;
+    }
+
+    main {
+        padding: 0.8rem;
+    }
+}
+
+/* Phones & small tablets - show mobile nav */
+@media (max-width: 1024px) {
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 40;
+    }
+}
+
+/* Tablets */
+@media (min-width: 481px) and (max-width: 1024px) {
+    :root {
+        --sidebar-w: 200px;
+    }
+
+    .main-layout {
+        max-width: 1000px;
+    }
+
+    main {
+        padding: 1rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1025px) and (max-width: 1919px) {
+    :root {
+        --sidebar-w: 240px;
+    }
+
+    .main-layout {
+        max-width: var(--container-max);
+    }
+
+    .mobile-bottom-nav {
+        display: none;
+    }
+}
+
+/* Large & ultra-wide screens */
+@media (min-width: 1920px) {
+    :root {
+        --container-max: 1600px;
+        --base-font: 18px;
+    }
+
+    .main-layout {
+        max-width: 1600px;
+    }
+}
+
+/* Landscape small-height adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .mobile-bottom-nav {
+        padding: 0.25rem 0;
+    }
+
+    .desktop-sidebar {
+        position: relative;
+        top: auto;
+    }
+}
+
+/* Notch / safe area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+    body {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-bottom-nav {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Accessibility helpers */
+.sr-only {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Ensure modals are not wider than view */
+.modal-content {
+    max-width: min(32rem, 94vw);
+}
+
+/* Prevent accidental zoom on iOS inputs */
+input,
+textarea,
+select {
+    font-size: 16px;
+}
+
+/* Ensure tappable targets are comfortable */
+button,
+.mobile-nav-btn {
+    min-height: 34px;
+    padding: 0.35rem 0.5rem;
+}
+
+/* End of responsive file */

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Nafs Tracker - متتبع العبادات اليومية</title>
+    <meta name="description"
+        content="تطبيق شامل لتتبع عباداتك اليومية - أذكار، صلاة، قرآن، سبحة إلكترونية، أدعية، مواقيت الصلاة والمزيد">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23081f16'/%3E%3Ccircle cx='14' cy='16' r='10' fill='%23c9a84c'/%3E%3Ccircle cx='19' cy='13' r='8' fill='%23081f16'/%3E%3Cpolygon points='26,7 27,10 30,10 28,12 29,15 26,13 23,15 24,12 22,10 25,10' fill='%23c9a84c'/%3E%3C/svg%3E">
+    <meta name="theme-color" content="#081f16">
+    <meta name="description" content="Nafs Tracker - تطبيق متابعة العبادات اليومية: أذكار، صلوات، قرآن، تحليلات">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
+
+    <!-- SEO / Open Graph -->
+    <meta property="og:title" content="Nafs Tracker - متتبع العبادات">
+    <meta property="og:description" content="تتبع أذكارك وصلواتك وقراءة القرآن يومياً - مجاناً">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ar_EG">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Nafs Tracker">
+    <meta name="twitter:description" content="تطبيق متابعة العبادات اليومية">
+
+    <!-- External Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Tailwind CSS (local production build) -->
+    <link rel="stylesheet" href="styles-tw.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Fonts (display=swap already in URL for fast text rendering) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Amiri:wght@400;700&family=Amiri+Quran&family=Scheherazade+New:wght@400;700&display=swap"
+        rel="stylesheet">
+
+
+
+    <!-- Firebase Libraries (defer to unblock first paint) -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Chart.js for Analytics (defer – only needed after login) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            overflow-y: auto;
+            /* allow document scrolling */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-height: 100vh;
+            /* let page expand */
+            overflow: visible;
+        }
+
+        #loading-screen,
+        #content {
+            width: 100%;
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            min-height: 0;
+            flex: 1;
+        }
+
+        .main-layout>div {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .desktop-sidebar {
+            flex-shrink: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        main {
+            flex: 1;
+            width: 100%;
+            min-width: 0;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .screen {
+            width: 100%;
+            padding-bottom: 1rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="_mobile_fix.css">
+</head>
+
+<body class="bg-islamic"
+    style="min-height: 100vh; display: flex; flex-direction: column; margin: 0; padding: 0; overflow-y: auto;">
+
+    <!-- Loading Screen (shown while Firebase initializes) -->
+    <div id="loading-screen">
+        <div class="spinner mb-4"></div>
+        <p style="color:var(--accent-gold);font-size:1.2rem;font-weight:bold;">جاري التحميل...</p>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="min-h-screen relative" style="display:none;">
+        <!-- Background Gradient Effects -->
+        <div class="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
+            <div class="absolute top-10 left-10 w-64 h-64 bg-gold-soft rounded-full blur-3xl"></div>
+            <div class="absolute bottom-10 right-10 w-96 h-96 bg-gold-soft rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="content"></div>
+
+        <!-- Mobile Nav Toggle Button -->
+        <button id="nav-toggle-btn" onclick="toggleMobileNav()"
+            style="display:none;position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:41;background:rgba(8,31,22,0.92);border:1px solid rgba(200,170,78,0.3);color:#c9a84c;width:40px;height:40px;border-radius:50%;font-size:1rem;cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 2px 12px rgba(0,0,0,0.3);transition:all 0.3s"><i
+                class="fas fa-chevron-up"></i></button>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="mobile-bottom-nav" id="mobile-nav" role="navigation" aria-label="التنقل الرئيسي"
+            style="display:none;">
+            <button class="mobile-nav-btn" id="mnav-dashboard" onclick="showScreen('dashboard')"><i
+                    class="fas fa-home"></i><span>الرئيسية</span></button>
+            <button class="mobile-nav-btn" id="mnav-adhkar" onclick="showScreen('adhkar')"><i
+                    class="fas fa-hands-praying"></i><span>الأذكار</span></button>
+            <button class="mobile-nav-btn" id="mnav-mushaf" onclick="showScreen('mushaf')"><i
+                    class="fas fa-quran"></i><span>المصحف</span></button>
+            <button class="mobile-nav-btn" id="mnav-prayer" onclick="showScreen('prayer')"><i
+                    class="fas fa-mosque"></i><span>الصلاة</span></button>
+            <button class="mobile-nav-btn" id="mnav-more" onclick="toggleMoreMenu()"><i
+                    class="fas fa-grip-horizontal"></i><span>المزيد</span></button>
+        </nav>
+
+        <!-- More Menu (Mobile) -->
+        <div id="more-menu" class="fixed right-0 left-0 hidden z-70 px-4 pb-2">
+            <div class="more-menu-grid">
+                <button class="mobile-nav-btn" onclick="showScreen('quran');closeMoreMenu()"><i
+                        class="fas fa-book-open"></i><span>تتبع القرآن</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('tasbih');closeMoreMenu()"><i
+                        class="fas fa-circle-notch"></i><span>السبحة</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('hadith');closeMoreMenu()"><i
+                        class="fas fa-scroll"></i><span>حديث اليوم</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('dua');closeMoreMenu()"><i
+                        class="fas fa-hands"></i><span>أدعية</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('qibla');closeMoreMenu()"><i
+                        class="fas fa-compass"></i><span>القبلة</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('names99');closeMoreMenu()"><i
+                        class="fas fa-star"></i><span>الأسماء الحسنى</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('adhan');closeMoreMenu()"><i
+                        class="fas fa-clock"></i><span>الأذان</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('analysis');closeMoreMenu()"><i
+                        class="fas fa-chart-line"></i><span>التحليل</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('podcasts');closeMoreMenu()"><i
+                        class="fas fa-podcast"></i><span>بودكاست</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('journal');closeMoreMenu()"><i
+                        class="fas fa-book"></i><span>يومياتي</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('rewards');closeMoreMenu()"><i
+                        class="fas fa-trophy"></i><span>مكافآت</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('zakat');closeMoreMenu()"><i
+                        class="fas fa-calculator"></i><span>الزكاة</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('reminders');closeMoreMenu()"><i
+                        class="fas fa-bell"></i><span>تذكير</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('settings');closeMoreMenu()"><i
+                        class="fas fa-cog"></i><span>إعدادات</span></button>
+            </div>
+        </div>
+
+        <!-- ===== MODALS ===== -->
+
+        <!-- Preferred Name Modal -->
+        <div id="preferred-name-modal" class="modal-overlay" data-closable="false">
+            <div class="modal-content text-center">
+                <div class="app-logo-icon-large mx-auto mb-5" style="margin:0 auto 1.25rem auto;">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="90%" height="90%">
+                        <defs>
+                            <radialGradient id="moonGrad2" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#f0d060;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--accent-gold);stop-opacity:1" />
+                            </radialGradient>
+                            <radialGradient id="bgGrad2" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#1c6b45;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0a2f1f;stop-opacity:1" />
+                            </radialGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="50" fill="url(#bgGrad2)" />
+                        <circle cx="48" cy="50" r="26" fill="url(#moonGrad2)" />
+                        <circle cx="57" cy="44" r="20" fill="#0a2f1f" />
+                        <polygon points="78,20 80,26 87,26 81,30 83,37 78,33 73,37 75,30 69,26 76,26"
+                            fill="url(#moonGrad2)" opacity="0.9" />
+                        <circle cx="50" cy="55" r="5" fill="#0a2f1f" opacity="0.7" />
+                        <path d="M42,75 Q50,62 58,75" stroke="#0a2f1f" stroke-width="3" fill="none" opacity="0.7" />
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gold mb-3">مرحباً بك في Nafs Tracker</h2>
+                <p class="text-[var(--text-primary)] text-xl mb-5">كيف تحب أن نناديك؟</p>
+                <input type="text" id="preferred-name-input" placeholder="الاسم المفضل"
+                    class="w-full mb-5 text-xl text-center" autocomplete="off"
+                    onkeydown="if(event.key==='Enter') savePreferredName()">
+                <button onclick="savePreferredName()"
+                    class="w-full bg-gradient-islamic border-2 border-gold text-gold font-bold py-4 rounded-xl text-xl transition ">
+                    <i class="fas fa-check me-2"></i> حفظ
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit Dhikr Modal -->
+        <div id="edit-dhikr-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">✏️ تعديل الذكر</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">نص الذكر</label><textarea id="edit-dhikr-text" rows="4"
+                            class="resize-none"></textarea></div>
+                    <div><label class="block mb-2">العدد المطلوب</label><input type="number" id="edit-dhikr-count"
+                            min="1"></div>
+                    <div><label class="block mb-2">فضل الذكر</label><input type="text" id="edit-dhikr-virtue"></div>
+                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number" id="edit-dhikr-points"
+                            min="1" value="5"></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveEditedDhikr()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-save me-2"></i> حفظ</button>
+                        <button onclick="closeModal('edit-dhikr-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Dhikr Modal -->
+        <div id="add-dhikr-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">➕ إضافة ذكر مخصص</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">القسم</label><select id="add-dhikr-category" class="w-full">
+                            <option value="morning">أذكار الصباح</option>
+                            <option value="evening">أذكار المساء</option>
+                            <option value="night">أذكار النوم</option>
+                            <option value="afterprayer">بعد الصلاة</option>
+                            <option value="custom" selected>أذكاري</option>
+                        </select></div>
+                    <div><label class="block mb-2">نص الذكر</label><textarea id="add-dhikr-text" rows="3"
+                            class="resize-none"></textarea></div>
+                    <div><label class="block mb-2">العدد المطلوب</label><input type="number" id="add-dhikr-count"
+                            min="1" value="1"></div>
+                    <div><label class="block mb-2">فضل الذكر (اختياري)</label><input type="text" id="add-dhikr-virtue">
+                    </div>
+                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number" id="add-dhikr-points"
+                            min="1" value="5"></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveNewDhikr()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-plus me-2"></i> إضافة</button>
+                        <button onclick="closeModal('add-dhikr-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Reminder Modal -->
+        <div id="reminder-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">⏰ إضافة تذكير</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">الذكر</label><select id="reminder-dhikr" class="w-full">
+                            <option value="morning">أذكار الصباح</option>
+                            <option value="evening">أذكار المساء</option>
+                            <option value="night">أذكار النوم</option>
+                            <option value="afterprayer">بعد الصلاة</option>
+                            <option value="custom">أذكاري (كلها)</option>
+                        </select></div>
+                    <div><label class="block mb-2">الوقت</label><input type="time" id="reminder-time"></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveReminder()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-bell me-2"></i> حفظ</button>
+                        <button onclick="closeModal('reminder-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Nafl Modal -->
+        <div id="nafl-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">🕌 إضافة صلاة نافلة</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">اسم النافلة</label><input type="text" id="nafl-name"
+                            placeholder="مثال: سنة الفجر"></div>
+                    <div><label class="block mb-2">عدد الركعات</label><input type="number" id="nafl-rakaat" min="1"
+                            max="12" value="2"></div>
+                    <div><label class="block mb-2">الوقت (اختياري)</label><select id="nafl-time" class="w-full">
+                            <option value="any">في أي وقت</option>
+                            <option value="fajr">بعد الفجر</option>
+                            <option value="dhuha">الضحى</option>
+                            <option value="dhuhr">قبل/بعد الظهر</option>
+                            <option value="asr">بعد العصر</option>
+                            <option value="maghrib">بعد المغرب</option>
+                            <option value="isha">بعد العشاء</option>
+                            <option value="tahajjud">قيام الليل</option>
+                        </select></div>
+                    <div><label class="block mb-2">ملاحظات</label><textarea id="nafl-notes" rows="2"
+                            class="resize-none"></textarea></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveNaflPrayer()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-check me-2"></i> إضافة</button>
+                        <button onclick="closeModal('nafl-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quran Pages Modal -->
+        <div id="quran-pages-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">📖 تسجيل صفحات قرآن</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">عدد الصفحات المقروءة</label><input type="number"
+                            id="quran-pages-count" min="1" max="604" value="1"></div>
+                    <div><label class="block mb-2">ملاحظة (اختياري)</label><input type="text" id="quran-pages-note"
+                            placeholder="مثال: من صفحة 50 إلى 55"></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveMultipleQuranPages()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-check me-2"></i> تسجيل</button>
+                        <button onclick="closeModal('quran-pages-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khatma Goal Modal -->
+        <div id="khatma-goal-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">🎯 هدف الختمة</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setKhatmaGoal(30)"
+                            class="bg-white/10 hover:bg-white/20 border border-gold/30 rounded-xl p-3 text-white transition">30
+                            يوم</button>
+                        <button onclick="setKhatmaGoal(60)"
+                            class="bg-white/10 hover:bg-white/20 border border-gold/30 rounded-xl p-3 text-white transition">60
+                            يوم</button>
+                        <button onclick="setKhatmaGoal(90)"
+                            class="bg-white/10 hover:bg-white/20 border border-gold/30 rounded-xl p-3 text-white transition">90
+                            يوم</button>
+                    </div>
+                    <div class="text-center text-[var(--text-muted)]">أو أدخل عدد الأيام يدوياً</div>
+                    <input type="number" id="custom-khatma-days" min="1" max="365" placeholder="عدد الأيام">
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveCustomKhatmaGoal()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-save me-2"></i> حفظ</button>
+                        <button onclick="closeModal('khatma-goal-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Surah Reading Modal -->
+        <div id="surah-reading-modal" class="modal-overlay" data-closable="true" style="display: none;">
+            <div class="modal-content">
+                <h2 id="surah-reading-title" class="text-2xl font-bold text-gold mb-3">سورة</h2>
+                <p id="surah-reading-info" class="text-white/60 mb-4"></p>
+                <div id="surah-reading-content" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                <div class="flex gap-3 mt-5">
+                    <button onclick="markSurahAsRead()" id="mark-read-btn"
+                        class="flex-1 bg-green-500/30 hover:bg-green-500/50 border border-green-500/50 text-green-400 font-bold py-3 rounded-xl transition">
+                        ✅ تم قراءة السورة
+                    </button>
+                    <button onclick="closeModal('surah-reading-modal')"
+                        class="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl">إغلاق</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Set Dhikr Progress Modal -->
+        <div id="set-dhikr-progress-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">✏️ ضبط التقدم</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">العدد الحالي</label><input type="number" id="set-progress-value"
+                            min="0"></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveManualProgress()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-check me-2"></i> تعيين</button>
+                        <button onclick="closeModal('set-dhikr-progress-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Podcast Modal -->
+        <div id="add-podcast-modal" class="modal-overlay" data-closable="true">
+            <div class="modal-content">
+                <h3 class="text-2xl font-bold text-gold mb-5">➕ إضافة بودكاست</h3>
+                <div class="space-y-4">
+                    <div><label class="block mb-2">اسم القناة</label><input type="text" id="podcast-name"
+                            placeholder="مثال: وعي"></div>
+                    <div><label class="block mb-2">الرابط (YouTube)</label><input type="url" id="podcast-url"
+                            placeholder="https://youtube.com/..."></div>
+                    <div><label class="block mb-2">أيقونة</label><select id="podcast-icon" class="w-full">
+                            <option value="fa-microphone">مايكروفون</option>
+                            <option value="fa-podcast">بودكاست</option>
+                            <option value="fa-brain">وعي</option>
+                            <option value="fa-user-tie">محاضر</option>
+                            <option value="fa-user-graduate">عالم</option>
+                            <option value="fa-mosque">مسجد</option>
+                        </select></div>
+                    <div class="flex gap-3 pt-3">
+                        <button onclick="saveCustomPodcast()"
+                            class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
+                            <i class="fas fa-plus me-2"></i> إضافة</button>
+                        <button onclick="closeModal('add-podcast-modal')"
+                            class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Confirm Dialog -->
+        <div id="custom-confirm" class="custom-confirm-overlay">
+            <div class="custom-confirm-box">
+                <i class="fas fa-question-circle text-5xl text-gold mb-4"></i>
+                <p id="confirm-message" class="text-xl text-[var(--text-primary)] mb-5">هل أنت متأكد؟</p>
+                <div class="flex gap-4">
+                    <button id="confirm-yes"
+                        class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl">نعم</button>
+                    <button id="confirm-no"
+                        class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl">لا</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Mode Overlay -->
+        <div id="emergency-overlay"
+            class="fixed inset-0 bg-gradient-islamic backdrop-filter backdrop-blur-xl flex items-center justify-center p-4 hidden"
+            style="z-index:150">
+            <div class="max-w-xl w-full space-y-5">
+                <div class="bg-gradient-to-br bg-gold-soft border-2 border-gold/50 rounded-3xl p-8 text-center">
+                    <div
+                        class="w-20 h-20 bg-gold-soft rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <span class="text-4xl">🧘</span>
+                    </div>
+                    <h2 class="text-4xl font-black text-gold mb-3">لحظة تهدئة</h2>
+                    <div id="emergency-timer" class="text-7xl font-black text-gold mb-4">10:00</div>
+                    <p class="text-xl text-[var(--text-muted)]">خذ نفساً عميقاً .. أنت بخير</p>
+                </div>
+                <div class="bg-gradient-to-br bg-gold-soft border border-gold/30 rounded-2xl p-6">
+                    <h3 class="text-2xl font-bold text-gold mb-3">✨ افعل الآن</h3>
+                    <p class="text-[var(--text-primary)] font-bold text-xl bg-gradient-islamic border border-gold/50 rounded-xl p-4"
+                        id="emergency-suggestion">توضأ وصل ركعتين</p>
+                </div>
+                <div class="bg-gradient-to-br bg-gold-soft border border-gold/30 rounded-2xl p-6 text-center">
+                    <p class="text-3xl font-arabic text-[var(--text-primary)] leading-relaxed" id="emergency-ayah">
+                        وَٱصۡبِرۡ فَإِنَّ
+                        ٱللَّهَ لَا يُضِيعُ أَجۡرَ ٱلۡمُحۡسِنِينَ</p>
+                </div>
+                <button onclick="deactivateEmergency()"
+                    class="w-full bg-gradient-islamic border-2 border-gold text-gold font-bold py-5 rounded-2xl text-xl transition-all">
+                    أنا بخير - الحمد لله
+                </button>
+            </div>
+        </div>
+
+        <!-- Back to Top Button -->
+        <button id="backToTop" class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})"
+            aria-label="العودة للأعلى">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+    </div>
+
+    <!-- Load External JavaScript Application (module: deferred by default) -->
+    <script type="module" src="app.js"></script>
+
+    <!-- Service Worker registration is handled inside app.js (initServiceWorker) -->
+
+</body>
+
+</html>
