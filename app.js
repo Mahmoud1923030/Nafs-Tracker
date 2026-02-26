@@ -3432,8 +3432,9 @@ window.toggleMushafFullscreen = function () {
             touchEndX = e.changedTouches[0].screenX;
             const diff = touchStartX - touchEndX;
             if (Math.abs(diff) > 60) {
-                if (diff > 0) { window.nextMushafPage(); }
-                else { window.prevMushafPage(); }
+                // RTL: swipe left (diff>0) = previous, swipe right (diff<0) = next
+                if (diff > 0) { window.prevMushafPage(); }
+                else { window.nextMushafPage(); }
             }
         }
     }, { passive: true });

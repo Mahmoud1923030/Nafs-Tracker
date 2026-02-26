@@ -3,7 +3,7 @@
 //  Coordinated update: no auto-skipWaiting; client must request it.
 //  ➜ Bump VERSION below whenever static files change to trigger an update.
 // =========================================================================
-const VERSION = 15;
+const VERSION = 16;
 const CACHE_NAME = `nafs-tracker-v${VERSION}`;
 const CDN_CACHE = `nafs-cdn-v${VERSION}`;
 
