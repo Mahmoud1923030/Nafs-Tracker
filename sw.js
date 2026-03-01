@@ -37,13 +37,15 @@ const NETWORK_ONLY_HOSTS = [
     'firestore.googleapis.com',
     'identitytoolkit.googleapis.com',
     'securetoken.googleapis.com',
-    'www.googleapis.com',
+    'googleapis.com',
     'firebase-settings.crashlytics.com',
     'alquran.cloud',
     'aladhan.com',
     'mp3quran.net',
     'tvquran.com',
     'cdn.islamic.network',
+    'quranicaudio.com',
+    'download.quranicaudio.com',
     'api.sunnah.com'
 ];
 

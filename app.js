@@ -4,18 +4,11 @@
 import { DEFAULT_MORNING_AZKAR, DEFAULT_EVENING_AZKAR, DEFAULT_NIGHT_AZKAR, DEFAULT_AFTER_PRAYER_AZKAR, DEFAULT_NAWAFL, DEFAULT_PODCASTS } from './js/constants/azkar-data.js';
 import { QURAN_SURAHS, QURAN_RECITERS, QURAN_AUDIO_FALLBACKS } from './js/constants/quran-data.js';
 import { COUNTRIES, ADHAN_URLS, NAMES_OF_ALLAH, DAILY_HADITHS, HADITH_API_BASE, HADITH_COLLECTIONS, DUA_CATEGORIES } from './js/constants/islamic-data.js';
+import { firebaseConfig } from './js/firebase-config.js';
 
 // =========================================================================
 //  Firebase Setup
 // =========================================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyD-Ngg9Mh6hhwmlQDruIbGYUyh0_zLpJDc",
-    authDomain: "nafs-tracker.firebaseapp.com",
-    projectId: "nafs-tracker",
-    storageBucket: "nafs-tracker.firebasestorage.app",
-    messagingSenderId: "452370322986",
-    appId: "1:452370322986:web:4733097702d63259fed553"
-};
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -167,6 +160,67 @@ function safeLocalStorageGet(key) {
     try { return localStorage.getItem(key); } catch { return null; }
 }
 
+// =========================================================================
+//  Rate Limiter — prevents flooding external APIs
+// =========================================================================
+const _rateLimitMap = {};
+/**
+ * Returns true if the action is allowed, false if rate-limited.
+ * @param {string} key   Unique identifier (e.g. 'aladhan', 'hadith')
+ * @param {number} cooldownMs  Minimum milliseconds between calls (default 3s)
+ */
+function rateLimitOk(key, cooldownMs = 3000) {
+    const now = Date.now();
+    if (_rateLimitMap[key] && now - _rateLimitMap[key] < cooldownMs) return false;
+    _rateLimitMap[key] = now;
+    return true;
+}
+
+// =========================================================================
+//  Offline Write Queue — queues Firestore writes when offline
+// =========================================================================
+const _offlineQueue = [];
+let _offlineFlushRunning = false;
+
+function queueOfflineWrite(path, value) {
+    _offlineQueue.push({ path, value, ts: Date.now() });
+    safeLocalStorageSet('nafs_offline_queue', JSON.stringify(_offlineQueue));
+}
+
+async function flushOfflineQueue() {
+    if (_offlineFlushRunning || _offlineQueue.length === 0 || !userId) return;
+    _offlineFlushRunning = true;
+    try {
+        while (_offlineQueue.length > 0) {
+            const item = _offlineQueue[0];
+            await db.collection('users').doc(userId).update({ [item.path]: item.value });
+            _offlineQueue.shift();
+        }
+        safeLocalStorageSet('nafs_offline_queue', '[]');
+    } catch (e) {
+        console.warn('[Nafs] Offline queue flush failed, will retry:', e.message);
+    } finally {
+        _offlineFlushRunning = false;
+    }
+}
+
+function restoreOfflineQueue() {
+    const saved = safeJsonParse(safeLocalStorageGet('nafs_offline_queue'), []);
+    if (Array.isArray(saved) && saved.length > 0) {
+        _offlineQueue.push(...saved);
+        flushOfflineQueue();
+    }
+}
+
+// Flush when coming back online
+window.addEventListener('online', () => {
+    flushOfflineQueue();
+    showToast('تم استعادة الاتصال 🌐');
+});
+window.addEventListener('offline', () => {
+    showToast('أنت غير متصل بالإنترنت — سيتم حفظ التغييرات محلياً', 'warning');
+});
+
 function generateId(prefix = 'id') {
     try {
         if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -248,6 +302,12 @@ function closeModal(id) {
 
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+        // Close emergency mode if active
+        const emOverlay = document.getElementById('emergency-overlay');
+        if (emOverlay && !emOverlay.classList.contains('hidden')) {
+            deactivateEmergency();
+            return;
+        }
         // Exit focus mode if active
         if (document.body.classList.contains('focus-mode')) {
             toggleFocusMode();
@@ -1127,6 +1187,110 @@ function renderLoginScreen() {
 //  Render All Functions
 // =========================================================================
 // =========================================================================
+//  What's New (تحديثات جديدة) — shows once per version
+// =========================================================================
+const NAFS_APP_VERSION = '2.5.0';
+
+function showWhatsNew() {
+    // Only show if user already completed onboarding (not a new user)
+    if (!safeLocalStorageGet('nafs_onboarding_v2_done')) return;
+    // Only show once per version
+    if (safeLocalStorageGet('nafs_whats_new_seen') === NAFS_APP_VERSION) return;
+
+    const updates = [
+        { icon: '🌙', title: 'تتبع الصيام', desc: 'شاشة صيام كاملة بتقويم شهري، أيام السنة (إثنين/خميس/أيام بيض)، إحصائيات وسلاسل صيام مع نقاط.' },
+        { icon: '🖼️', title: 'مشاركة الإنجاز كصورة', desc: 'شارك تقدمك كصورة جميلة فيها إحصائياتك — الداشبورد فيه زرار "صورة إنجاز" جديد.' },
+        { icon: '🌃', title: 'وضع القراءة الليلية', desc: 'الوضع الليلي في المصحف — خلفية سوداء مريحة للعينين أثناء القراءة بالليل.' },
+        { icon: '🎨', title: 'ثلاث أوضاع مظهر', desc: 'داكن / فاتح / تلقائي (يتبع نظام جهازك). بدّل من الإعدادات أو زرار الشمس.' },
+        { icon: '⚡', title: 'تحسين الأداء والأمان', desc: 'حماية من الطلبات المتكررة للـ API، وقائمة انتظار ذكية للكتابة أثناء انقطاع الإنترنت.' },
+        { icon: '♿', title: 'دعم إمكانية الوصول', desc: 'تحسينات لقارئات الشاشة، تنقل بالكيبورد، ورابط تخطي للمحتوى.' },
+    ];
+
+    let currentIdx = 0;
+
+    function render() {
+        const u = updates[currentIdx];
+        const isLast = currentIdx === updates.length - 1;
+        const dots = updates.map((_, i) =>
+            `<div style="width:${i === currentIdx ? '18px' : '6px'};height:6px;border-radius:3px;background:${i === currentIdx ? '#c9a84c' : i < currentIdx ? 'rgba(200,170,78,0.5)' : 'rgba(200,170,78,0.12)'};transition:all 0.3s"></div>`
+        ).join('');
+
+        return `
+        <div style="position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn 0.3s ease">
+            <div style="background:linear-gradient(145deg,#0f2b1e,#081f16);border:1.5px solid rgba(200,170,78,0.25);border-radius:1.25rem;max-width:420px;width:100%;padding:2rem 1.5rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);position:relative;overflow:hidden">
+                <!-- Decorative top glow -->
+                <div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:80px;background:radial-gradient(ellipse,rgba(200,170,78,0.15),transparent);pointer-events:none"></div>
+
+                <!-- Header badge -->
+                <div style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(200,170,78,0.1);border:1px solid rgba(200,170,78,0.25);border-radius:2rem;padding:0.3rem 1rem;font-size:0.8rem;color:#c9a84c;margin-bottom:1.25rem;font-weight:700">
+                    🎉 جديد في v${NAFS_APP_VERSION}
+                </div>
+
+                <!-- Counter -->
+                <div style="position:absolute;top:1rem;left:1rem;color:rgba(200,170,78,0.4);font-size:0.75rem">${currentIdx + 1}/${updates.length}</div>
+
+                <!-- Content -->
+                <div style="font-size:3.5rem;margin-bottom:1rem;animation:slideInUp 0.35s ease">${u.icon}</div>
+                <h3 style="font-size:1.35rem;font-weight:800;color:#c9a84c;margin-bottom:0.6rem;animation:slideInUp 0.35s ease 0.05s both">${u.title}</h3>
+                <p style="font-size:0.95rem;color:rgba(242,234,216,0.7);line-height:1.7;max-width:340px;margin:0 auto 1.5rem;animation:slideInUp 0.35s ease 0.1s both">${u.desc}</p>
+
+                <!-- Dots -->
+                <div style="display:flex;gap:4px;justify-content:center;margin-bottom:1.25rem">${dots}</div>
+
+                <!-- Buttons -->
+                <div style="display:flex;gap:0.6rem;justify-content:center;animation:slideInUp 0.35s ease 0.15s both">
+                    ${currentIdx > 0 ? `<button onclick="window._whatsNewPrev()" style="padding:0.6rem 1.2rem;border-radius:0.8rem;background:transparent;border:1px solid rgba(200,170,78,0.2);color:rgba(242,234,216,0.5);font-size:0.9rem;cursor:pointer;transition:all 0.2s">→ السابق</button>` : ''}
+                    ${isLast ? `
+                        <button onclick="window._whatsNewClose()" style="padding:0.7rem 2rem;border-radius:0.8rem;background:linear-gradient(135deg,rgba(200,170,78,0.25),rgba(200,170,78,0.1));border:1px solid rgba(200,170,78,0.5);color:#c9a84c;font-size:1rem;font-weight:800;cursor:pointer;min-width:180px;transition:all 0.2s">✨ يلا نبدأ!</button>
+                    ` : `
+                        <button onclick="window._whatsNewNext()" style="padding:0.6rem 1.8rem;border-radius:0.8rem;background:linear-gradient(135deg,rgba(200,170,78,0.2),rgba(200,170,78,0.08));border:1px solid rgba(200,170,78,0.4);color:#c9a84c;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s">التالي ←</button>
+                    `}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    window._whatsNewNext = () => {
+        if (currentIdx < updates.length - 1) {
+            currentIdx++;
+            document.getElementById('whats-new-container').innerHTML = render();
+        }
+    };
+
+    window._whatsNewPrev = () => {
+        if (currentIdx > 0) {
+            currentIdx--;
+            document.getElementById('whats-new-container').innerHTML = render();
+        }
+    };
+
+    window._whatsNewClose = () => {
+        safeLocalStorageSet('nafs_whats_new_seen', NAFS_APP_VERSION);
+        const c = document.getElementById('whats-new-container');
+        if (c) {
+            c.style.opacity = '0';
+            c.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => c.remove(), 300);
+        }
+    };
+
+    // Swipe support
+    let sx = 0;
+    const container = document.createElement('div');
+    container.id = 'whats-new-container';
+    container.innerHTML = render();
+    container.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+    container.addEventListener('touchend', e => {
+        const diff = sx - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0 && currentIdx < updates.length - 1) window._whatsNewNext();
+            else if (diff < 0 && currentIdx > 0) window._whatsNewPrev();
+        }
+    }, { passive: true });
+    document.body.appendChild(container);
+}
+
+// =========================================================================
 //  Onboarding (3-screen intro for new users)
 // =========================================================================
 function showOnboarding() {
@@ -1266,7 +1430,7 @@ function renderMainApp() {
             ['mushaf', '📖', 'المصحف'], ['quran', '📊', 'تتبع القرآن'], ['tasbih', '🧿', 'السبحة'], ['hadith', '📜', 'حديث اليوم'],
             ['qibla', '🧭', 'القبلة'], ['names99', '✨', 'أسماء الله'], ['dua', '🤲', 'أدعية'], ['analysis', '📈', 'التحليل'], ['podcasts', '🎙️', 'البودكاستات'],
             ['journal', '📔', 'يومياتي'], ['rewards', '🏆', 'المكافآت'], ['reminders', '⏰', 'التذكيرات'],
-            ['zakat', '💰', 'الزكاة'], ['adhan', '🔔', 'الأذان'], ['settings', '⚙️', 'الإعدادات']
+            ['zakat', '💰', 'الزكاة'], ['adhan', '🔔', 'الأذان'], ['fasting', '🌙', 'الصيام'], ['settings', '⚙️', 'الإعدادات']
         ].map(([id, icon, label]) => `
                     <button onclick="showScreen('${id}')" id="nav-${id}" class="nav-link">
                         <span>${icon}</span><span class="font-semibold">${label}</span>
@@ -1276,7 +1440,7 @@ function renderMainApp() {
 
     const screens = `
         <main class="flex-1 min-w-0">
-            ${['dashboard', 'adhkar', 'prayer', 'mushaf', 'quran', 'analysis', 'podcasts', 'journal', 'rewards', 'reminders', 'zakat', 'adhan', 'settings', 'tasbih', 'qibla', 'names99', 'hadith', 'dua', 'privacy']
+            ${['dashboard', 'adhkar', 'prayer', 'mushaf', 'quran', 'analysis', 'podcasts', 'journal', 'rewards', 'reminders', 'zakat', 'adhan', 'settings', 'tasbih', 'qibla', 'names99', 'hadith', 'dua', 'privacy', 'fasting']
             .map(id => `<div id="screen-${id}" class="screen hidden space-y-5"></div>`).join('')}
         </main>`;
 
@@ -1313,7 +1477,8 @@ function renderMainApp() {
             dashboard: renderDashboard, adhkar: renderAdhkar, prayer: renderPrayer,
             mushaf: renderMushaf, quran: renderQuran, zakat: renderZakat, adhan: renderAdhan, analysis: renderAnalysis, podcasts: renderPodcasts,
             journal: renderJournal, rewards: renderRewards, reminders: renderReminders,
-            settings: renderSettings, tasbih: renderTasbih, qibla: renderQibla, names99: renderNames99, hadith: renderHadith, dua: renderDua, privacy: renderPrivacy
+            settings: renderSettings, tasbih: renderTasbih, qibla: renderQibla, names99: renderNames99, hadith: renderHadith, dua: renderDua, privacy: renderPrivacy,
+            fasting: renderFasting
         };
         // Error boundary: wrap each render in try/catch with recovery options
         if (renders[screenId]) {
@@ -1521,12 +1686,15 @@ function renderDashboard() {
         <div class="card p-6 text-center bg-gradient-to-br from-[var(--accent-gold)]/10 to-transparent border-2 border-gold/30">
             <p class="text-2xl font-arabic text-[var(--text-primary)] leading-relaxed">${getSeasonalHadith()}</p>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
             <button onclick="activateEmergency()" class="bg-gradient-islamic border-2 border-gold text-gold font-bold py-4 rounded-2xl text-base transition-all shadow-lg ripple-btn">
                 <span class="text-xl ms-1">🧘</span> لحظة تأمل
             </button>
             <button onclick="shareAppAchievement()" class="bg-gradient-islamic border-2 border-gold/50 text-gold font-bold py-4 rounded-2xl text-base transition-all shadow-lg ripple-btn">
                 <span class="text-xl ms-1">📤</span> شارك إنجازك
+            </button>
+            <button onclick="shareProgressAsImage()" class="bg-gradient-islamic border-2 border-gold/50 text-gold font-bold py-4 rounded-2xl text-base transition-all shadow-lg ripple-btn">
+                <span class="text-xl ms-1">🖼️</span> صورة إنجاز
             </button>
         </div>`;
 }
@@ -2618,6 +2786,7 @@ window.fetchPrayerTimesGeo = async function () {
 
 window.fetchPrayerTimesByCoords = async function (lat, lng, method = 5) {
     try {
+        if (!rateLimitOk('aladhan', 10000)) { showToast('انتظر قليلاً قبل التحديث مرة أخرى'); return; }
         const date = new Date();
         const url = `https://api.aladhan.com/v1/timings/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}?latitude=${lat}&longitude=${lng}&method=${method}`;
         const res = await fetch(url);
@@ -2901,6 +3070,7 @@ function renderSurahReading(surah) {
         </div>`;
 
     // Fetch Uthmani text from API
+    if (!rateLimitOk('alquran_surah', 3000)) return;
     fetch(`https://api.alquran.cloud/v1/surah/${surah.num}/quran-uthmani`)
         .then(r => r.json())
         .then(data => {
@@ -3219,6 +3389,9 @@ function renderMushaf() {
                     <h2 class="text-lg font-bold" style="color:var(--accent-gold)">المصحف الشريف</h2>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="toggleMushafNightMode()" class="mushaf-fullscreen-btn" title="وضع القراءة الليلية">
+                        <i class="fas ${_mushafNightMode ? 'fa-sun' : 'fa-moon'}"></i>
+                    </button>
                     <button onclick="toggleMushafFullscreen()" class="mushaf-fullscreen-btn" id="mushaf-fs-btn" title="شاشة كاملة">
                         <i class="fas fa-expand"></i>
                     </button>
@@ -3259,6 +3432,11 @@ function renderMushaf() {
             </div>
         </div>`;
 
+    // Apply night mode class if enabled
+    if (_mushafNightMode) {
+        document.getElementById('screen-mushaf')?.classList.add('mushaf-night-mode');
+    }
+
     loadMushafPage(currentMushafPage);
 }
 
@@ -3282,6 +3460,7 @@ async function loadMushafPage(pageNum) {
     </div>`;
 
     try {
+        if (!rateLimitOk('mushaf_page', 1500)) { mushafLoading = false; return; }
         const res = await fetch(`https://api.alquran.cloud/v1/page/${pageNum}/quran-uthmani`);
         const data = await res.json();
 
@@ -4186,6 +4365,18 @@ function renderSettings() {
                     <input type="range" id="appFontSize" min="12" max="24" value="${s.appFontSize || 16}" class="w-full" oninput="document.getElementById('app-font-size-val').innerText=this.value; setAppFontSize(this.value)">
                 </div>
                 <div class="mt-3 flex items-center justify-between">
+                    <label class="text-sm" style="color:var(--text-secondary)">المظهر الحالي: <span class="text-gold font-bold">${typeof _themeMode !== 'undefined' ? (_themeMode === 'dark' ? 'داكن' : _themeMode === 'light' ? 'فاتح' : 'تلقائي') : 'داكن'}</span></label>
+                    <button onclick="toggleTheme(); setTimeout(renderSettings,100)" class="px-4 py-2 rounded-xl text-sm font-bold transition ripple-btn" style="background:rgba(200,170,78,0.1);border:1px solid rgba(200,170,78,0.3);color:var(--accent-gold)">
+                        <i class="fas fa-palette me-1"></i>تبديل المظهر
+                    </button>
+                </div>
+                <div class="mt-3 flex items-center justify-between">
+                    <label class="text-sm" style="color:var(--text-secondary)">وضع القراءة الليلية (المصحف)</label>
+                    <button onclick="toggleMushafNightMode()" class="px-4 py-2 rounded-xl text-sm font-bold transition ripple-btn" style="background:${_mushafNightMode ? 'rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#4ade80' : 'rgba(200,170,78,0.1);border:1px solid rgba(200,170,78,0.3);color:var(--accent-gold)'}">
+                        <i class="fas ${_mushafNightMode ? 'fa-moon' : 'fa-sun'} me-1"></i>${_mushafNightMode ? 'مفعّل' : 'معطّل'}
+                    </button>
+                </div>
+                <div class="mt-3 flex items-center justify-between">
                     <label class="text-sm" style="color:var(--text-secondary)">وضع التركيز (Alt+F)</label>
                     <button onclick="toggleFocusMode()" class="px-4 py-2 rounded-xl text-sm font-bold transition ripple-btn" style="background:rgba(200,170,78,0.1);border:1px solid rgba(200,170,78,0.3);color:var(--accent-gold)">
                         <i class="fas fa-eye-slash me-1"></i>تفعيل
@@ -4424,55 +4615,198 @@ function renderPrivacy() {
 }
 
 // =========================================================================
-//  Emergency Mode
+//  Emergency Mode — لحظة تأمل (3-phase: Breathe → Reflect → Act)
 // =========================================================================
-window.activateEmergency = function () {
-    const overlay = document.getElementById('emergency-overlay');
-    overlay.classList.remove('hidden');
-    const expiry = Date.now() + 600 * 1000;
-    safeLocalStorageSet('emergency_expiry', expiry.toString());
-    startEmergencyTimer(600);
-    setRandomEmergencyContent();
+
+const EM_AYAHS = [
+    { text: 'قُلْ يَا عِبَادِيَ الَّذِينَ أَسْرَفُوا عَلَىٰ أَنفُسِهِمْ لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ ۚ إِنَّ اللَّهَ يَغْفِرُ الذُّنُوبَ جَمِيعًا', source: '— الزمر: ٥٣' },
+    { text: 'وَمَن يَعْمَلْ سُوءًا أَوْ يَظْلِمْ نَفْسَهُ ثُمَّ يَسْتَغْفِرِ اللَّهَ يَجِدِ اللَّهَ غَفُورًا رَّحِيمًا', source: '— النساء: ١١٠' },
+    { text: 'وَإِنِّي لَغَفَّارٌ لِّمَن تَابَ وَآمَنَ وَعَمِلَ صَالِحًا ثُمَّ اهْتَدَىٰ', source: '— طه: ٨٢' },
+    { text: 'إِنَّ اللَّهَ يُحِبُّ التَّوَّابِينَ وَيُحِبُّ الْمُتَطَهِّرِينَ', source: '— البقرة: ٢٢٢' },
+    { text: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ', source: '— الرعد: ٢٨' },
+    { text: 'وَاسْتَغْفِرُوا رَبَّكُمْ ثُمَّ تُوبُوا إِلَيْهِ ۚ إِنَّ رَبِّي رَحِيمٌ وَدُودٌ', source: '— هود: ٩٠' },
+    { text: 'يَا أَيُّهَا الَّذِينَ آمَنُوا تُوبُوا إِلَى اللَّهِ تَوْبَةً نَّصُوحًا', source: '— التحريم: ٨' }
+];
+const EM_HADITHS = [
+    { text: 'كل ابن آدم خطّاء، وخير الخطّائين التوّابون', source: '— رواه الترمذي' },
+    { text: 'التائب من الذنب كمن لا ذنب له', source: '— رواه ابن ماجه' },
+    { text: 'إن الله يبسط يده بالليل ليتوب مسيء النهار، ويبسط يده بالنهار ليتوب مسيء الليل', source: '— رواه مسلم' },
+    { text: 'لَلَّهُ أشد فرحاً بتوبة عبده من أحدكم براحلته', source: '— متفق عليه' },
+    { text: 'من تاب قبل أن تطلع الشمس من مغربها تاب الله عليه', source: '— رواه مسلم' }
+];
+const EM_ACTIONS = [
+    { icon: '🕌', title: 'قم الآن وتوضأ', sub: 'الوضوء يمحو الذنوب ويصفّي القلب' },
+    { icon: '📖', title: 'اقرأ سورة التوبة', sub: 'فيها سبعة وعشرون نداءً للتائبين' },
+    { icon: '🤲', title: 'استغفر الله مئة مرة', sub: 'من أكثر الاستغفار جعل الله له من كل ضيق مخرجاً' },
+    { icon: '🚶', title: 'اخرج وامشِ قليلاً', sub: 'غيّر بيئتك — ابتعد عن مكان الإغراء الآن' },
+    { icon: '📵', title: 'ضع الهاتف بعيداً', sub: 'ابتعد عن الشاشة عشر دقائق كاملة' },
+    { icon: '💧', title: 'اشرب ماء وتوضأ', sub: 'كسر اللحظة بفعل جسدي يعيدك لنفسك' },
+    { icon: '🕋', title: 'صلِّ ركعتين لله', sub: 'ركعتان خير من الدنيا وما فيها' }
+];
+
+const EM_BREATH_STEPS = [
+    { text: 'شهيق عميق...', dur: 4000 },
+    { text: 'احبس نفسك...', dur: 4000 },
+    { text: 'زفير بهدوء...', dur: 6000 },
+    { text: 'ارتاح...', dur: 2000 }
+];
+
+let emBreathTimeout = null;
+let emBreathIdx = 0;
+let emBreathCycles = 0;
+let emTimerInterval = null;
+
+function emCreateStars() {
+    const c = document.getElementById('em-stars');
+    if (!c || c.children.length > 0) return;
+    for (let i = 0; i < 45; i++) {
+        const s = document.createElement('div');
+        s.className = 'em-star';
+        const sz = Math.random() * 2 + 1;
+        s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random() * 100}%;left:${Math.random() * 100}%;--d:${2 + Math.random() * 4}s;--dl:${Math.random() * 4}s;`;
+        c.appendChild(s);
+    }
+}
+
+function emClearStars() {
+    const c = document.getElementById('em-stars');
+    if (c) c.innerHTML = '';
+}
+
+function emSetRandomContent() {
+    const ayah = EM_AYAHS[Math.floor(Math.random() * EM_AYAHS.length)];
+    const hadith = EM_HADITHS[Math.floor(Math.random() * EM_HADITHS.length)];
+    const action = EM_ACTIONS[Math.floor(Math.random() * EM_ACTIONS.length)];
+    const el = (id) => document.getElementById(id);
+    if (el('em-ayah-text')) el('em-ayah-text').innerText = ayah.text;
+    if (el('em-ayah-source')) el('em-ayah-source').innerText = ayah.source;
+    if (el('em-hadith-text')) el('em-hadith-text').innerText = hadith.text;
+    if (el('em-hadith-source')) el('em-hadith-source').innerText = hadith.source;
+    if (el('em-action-icon')) el('em-action-icon').innerText = action.icon;
+    if (el('em-action-title')) el('em-action-title').innerText = action.title;
+    if (el('em-action-sub')) el('em-action-sub').innerText = action.sub;
+}
+
+window.emGoPhase = function (n) {
+    [1, 2, 3].forEach(i => {
+        const phase = document.getElementById(`em-phase-${i}`);
+        const dot = document.getElementById(`em-dot-${i}`);
+        if (phase) phase.classList.toggle('em-hidden', i !== n);
+        if (dot) dot.classList.toggle('active', i === n);
+    });
+    if (n === 3) emStartTimer();
+    if (emBreathTimeout) { clearTimeout(emBreathTimeout); emBreathTimeout = null; }
 };
 
-function setRandomEmergencyContent() {
-    const suggestions = ['توضأ وصل ركعتين', 'اخرج للهواء الطلق', 'اقرأ صفحة من القرآن', 'سبح: سبحان الله وبحمده', 'اشرب كوب ماء وتمهل'];
-    const ayahs = ['وَٱصۡبِرۡ فَإِنَّ ٱللَّهَ لَا يُضِيعُ أَجۡرَ ٱلۡمُحۡسِنِينَ', 'إِنَّ مَعَ ٱلۡعُسۡرِ يُسۡرًا', 'وَمَن يَتَّقِ ٱللَّهَ يَجۡعَل لَّهُۥ مَخۡرَجًا'];
-    const sEl = document.getElementById('emergency-suggestion');
-    const aEl = document.getElementById('emergency-ayah');
-    if (sEl) sEl.innerText = suggestions[Math.floor(Math.random() * suggestions.length)];
-    if (aEl) aEl.innerText = ayahs[Math.floor(Math.random() * ayahs.length)];
+function emRunBreath() {
+    const pFill = document.getElementById('em-progress-fill');
+    const bText = document.getElementById('em-breath-text');
+    if (!pFill || !bText) return;
+
+    const s = EM_BREATH_STEPS[emBreathIdx];
+    bText.style.opacity = 0;
+    setTimeout(() => { bText.innerText = s.text; bText.style.opacity = 1; }, 200);
+    pFill.style.transition = 'none'; pFill.style.width = '0%';
+    setTimeout(() => { pFill.style.transition = `width ${s.dur / 1000}s linear`; pFill.style.width = '100%'; }, 60);
+
+    // Vibrate on inhale for tactile feedback
+    if (emBreathIdx === 0 && navigator.vibrate) {
+        try { navigator.vibrate(100); } catch (_) { }
+    }
+
+    emBreathTimeout = setTimeout(() => {
+        emBreathIdx = (emBreathIdx + 1) % EM_BREATH_STEPS.length;
+        if (emBreathIdx === 0) {
+            emBreathCycles++;
+            if (emBreathCycles >= 3) { setTimeout(() => emGoPhase(2), 600); return; }
+        }
+        emRunBreath();
+    }, s.dur);
 }
 
-function startEmergencyTimer(seconds) {
-    if (emergencyInterval) clearInterval(emergencyInterval);
-    const timerEl = document.getElementById('emergency-timer');
-    let remaining = seconds;
-    const updateTimer = () => {
-        if (remaining <= 0) { clearInterval(emergencyInterval); deactivateEmergency(); return; }
-        const m = Math.floor(remaining / 60), s = remaining % 60;
-        if (timerEl) timerEl.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        remaining--;
-    };
-    updateTimer();
-    emergencyInterval = setInterval(updateTimer, 1000);
+function emStartTimer() {
+    if (emTimerInterval) clearInterval(emTimerInterval);
+    let rem = 600;
+    const el = document.getElementById('emergency-timer');
+    const expiry = Date.now() + rem * 1000;
+    safeLocalStorageSet('emergency_expiry', expiry.toString());
+
+    function tick() {
+        if (rem <= 0) { clearInterval(emTimerInterval); emTimerInterval = null; emFinish(); return; }
+        const m = Math.floor(rem / 60), s = rem % 60;
+        if (el) el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        rem--;
+    }
+    tick();
+    emTimerInterval = setInterval(tick, 1000);
 }
+
+function emResetPhases() {
+    emBreathIdx = 0;
+    emBreathCycles = 0;
+    if (emBreathTimeout) { clearTimeout(emBreathTimeout); emBreathTimeout = null; }
+    if (emTimerInterval) { clearInterval(emTimerInterval); emTimerInterval = null; }
+    // Reset to phase 1
+    [1, 2, 3].forEach(i => {
+        const phase = document.getElementById(`em-phase-${i}`);
+        const dot = document.getElementById(`em-dot-${i}`);
+        if (phase) phase.classList.toggle('em-hidden', i !== 1);
+        if (dot) dot.classList.toggle('active', i === 1);
+    });
+}
+
+window.activateEmergency = function () {
+    const overlay = document.getElementById('emergency-overlay');
+    if (!overlay) return;
+    emResetPhases();
+    emCreateStars();
+    emSetRandomContent();
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    emRunBreath();
+};
+
+window.emFinish = function () {
+    deactivateEmergency();
+};
+
+window.deactivateEmergency = function () {
+    const overlay = document.getElementById('emergency-overlay');
+    if (overlay) { overlay.classList.add('hidden'); overlay.style.display = ''; }
+    emResetPhases();
+    emClearStars();
+    document.body.style.overflow = '';
+    safeLocalStorageSet('emergency_expiry', '0');
+    if (emergencyInterval) { clearInterval(emergencyInterval); emergencyInterval = null; }
+};
 
 function restoreEmergencyState() {
     const expiry = parseInt(safeLocalStorageGet('emergency_expiry') || '0');
     const remaining = Math.floor((expiry - Date.now()) / 1000);
     if (remaining > 0) {
-        document.getElementById('emergency-overlay').classList.remove('hidden');
-        startEmergencyTimer(remaining);
-        setRandomEmergencyContent();
+        const overlay = document.getElementById('emergency-overlay');
+        if (!overlay) return;
+        emCreateStars();
+        emSetRandomContent();
+        overlay.classList.remove('hidden');
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        // Jump directly to phase 3 with remaining time
+        emGoPhase(3);
+        if (emTimerInterval) clearInterval(emTimerInterval);
+        let rem = remaining;
+        const el = document.getElementById('emergency-timer');
+        function tick() {
+            if (rem <= 0) { clearInterval(emTimerInterval); emTimerInterval = null; emFinish(); return; }
+            const m = Math.floor(rem / 60), s = rem % 60;
+            if (el) el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            rem--;
+        }
+        tick();
+        emTimerInterval = setInterval(tick, 1000);
     }
 }
-
-window.deactivateEmergency = function () {
-    document.getElementById('emergency-overlay').classList.add('hidden');
-    if (emergencyInterval) { clearInterval(emergencyInterval); emergencyInterval = null; }
-    safeLocalStorageSet('emergency_expiry', '0');
-};
 
 // =========================================================================
 //  Back to Top
@@ -4487,15 +4821,34 @@ function initBackToTop() {
 }
 
 // =========================================================================
-//  Theme System (simple dark/light)
+//  Theme System (dark/light/auto)
 // =========================================================================
+let _themeMode = 'dark'; // 'dark' | 'light' | 'auto'
+
 window.toggleTheme = function () {
-    isLightMode = !isLightMode;
-    document.body.classList.toggle('light-mode', isLightMode);
-    safeLocalStorageSet('nafs_theme', isLightMode ? 'light' : 'dark');
+    // Cycle: dark → light → auto → dark
+    const cycle = { dark: 'light', light: 'auto', auto: 'dark' };
+    _themeMode = cycle[_themeMode] || 'dark';
+    applyTheme(_themeMode);
+    safeLocalStorageSet('nafs_theme', _themeMode);
+    const labels = { dark: 'الوضع الداكن', light: 'الوضع الفاتح', auto: 'تلقائي (حسب النظام)' };
+    showToast(`🎨 ${labels[_themeMode]}`);
+};
+
+function applyTheme(mode) {
+    _themeMode = mode;
+    let shouldBeLight = false;
+    if (mode === 'light') shouldBeLight = true;
+    else if (mode === 'auto') shouldBeLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    // else dark
+
+    isLightMode = shouldBeLight;
+    document.body.classList.toggle('light-mode', shouldBeLight);
     const icon = document.getElementById('theme-icon');
-    if (icon) icon.className = isLightMode ? 'fas fa-moon' : 'fas fa-sun';
-    // Re-render charts
+    if (icon) {
+        icon.className = mode === 'auto' ? 'fas fa-adjust' : (shouldBeLight ? 'fas fa-moon' : 'fas fa-sun');
+    }
+    // Re-render charts if visible
     const activeScreen = document.querySelector('.screen:not(.hidden)');
     if (activeScreen) {
         const id = activeScreen.id.replace('screen-', '');
@@ -4503,15 +4856,19 @@ window.toggleTheme = function () {
         const renders = { quran: renderQuran, analysis: renderAnalysis };
         if (renders[id]) renders[id]();
     }
-};
+}
 
 function loadSavedTheme() {
-    const saved = safeLocalStorageGet('nafs_theme');
-    if (saved === 'light') {
-        isLightMode = true;
-        document.body.classList.add('light-mode');
-    }
+    const saved = safeLocalStorageGet('nafs_theme') || 'dark';
+    applyTheme(saved);
 }
+
+// Listen for system theme changes (when in auto mode)
+try {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if (_themeMode === 'auto') applyTheme('auto');
+    });
+} catch (_) { /* matchMedia listener not supported */ }
 
 // =========================================================================
 //  Save Preferred Name
@@ -5353,10 +5710,12 @@ window.showName99Detail = function (i) {
 //  Hadith of the Day (حديث اليوم) + Hadith API Integration
 // =========================================================================
 let currentHadithCollection = 'bukhari';
+const hadithApiCache = {};
 
 async function fetchHadithFromAPI(edition, hadithNumber) {
     const cacheKey = `${edition}_${hadithNumber}`;
     if (hadithApiCache[cacheKey]) return hadithApiCache[cacheKey];
+    if (!rateLimitOk('hadith_api', 2000)) return null;
 
     try {
         const resp = await fetch(`${HADITH_API_BASE}/editions/${edition}/${hadithNumber}.min.json`);
@@ -5641,6 +6000,234 @@ function initSurahReadingModal() {
 //  Service Worker Registration & Update Handling
 // =========================================================================
 
+// =========================================================================
+//  Share Progress as Image (Canvas API)
+// =========================================================================
+window.shareProgressAsImage = async function () {
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        const gradient = ctx.createLinearGradient(0, 0, 600, 400);
+        gradient.addColorStop(0, '#081f16');
+        gradient.addColorStop(1, '#0a2f1f');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 600, 400);
+
+        // Decorative border
+        ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(15, 15, 570, 370);
+
+        // Title
+        ctx.fillStyle = '#c9a84c';
+        ctx.font = 'bold 28px Tajawal, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌙 Nafs Tracker', 300, 55);
+
+        // Stats
+        ctx.fillStyle = '#f2ead8';
+        ctx.font = 'bold 20px Tajawal, sans-serif';
+        ctx.fillText(`🔥 سلسلة ${appState?.streak || 0} يوم`, 300, 120);
+        ctx.fillText(`⭐ ${appState?.totalPoints || 0} نقطة`, 300, 160);
+        ctx.fillText(`📖 المستوى ${appState?.level || 1}`, 300, 200);
+
+        // Today's pages
+        const todayPages = appState?.quranProgress?.dailyPages?.[getLocalDateString()] || 0;
+        ctx.fillText(`📖 قراءة اليوم: ${todayPages} صفحة`, 300, 240);
+
+        // Fasting count this month
+        const fastingCount = countMonthlyFasting();
+        if (fastingCount > 0) ctx.fillText(`🌙 صيام هذا الشهر: ${fastingCount} يوم`, 300, 280);
+
+        // Footer
+        ctx.fillStyle = 'rgba(201,168,76,0.5)';
+        ctx.font = '14px Tajawal, sans-serif';
+        ctx.fillText('nafs-tracker-live.vercel.app', 300, 360);
+
+        // Convert to blob and share
+        canvas.toBlob(async (blob) => {
+            if (!blob) { showToast('تعذر إنشاء الصورة', 'error'); return; }
+            const file = new File([blob], 'nafs-progress.png', { type: 'image/png' });
+
+            if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: 'إنجازاتي في Nafs Tracker' });
+                } catch (e) { if (e.name !== 'AbortError') downloadCanvasImage(blob); }
+            } else {
+                downloadCanvasImage(blob);
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error('[Nafs] Share image error:', e);
+        showToast('تعذر إنشاء الصورة', 'error');
+    }
+};
+
+function downloadCanvasImage(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nafs-progress-${getLocalDateString()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('تم تحميل الصورة 🖼️');
+}
+
+// =========================================================================
+//  Night Reading Mode (Mushaf)
+// =========================================================================
+let _mushafNightMode = false;
+
+window.toggleMushafNightMode = function () {
+    _mushafNightMode = !_mushafNightMode;
+    const mushafScreen = document.getElementById('screen-mushaf');
+    if (mushafScreen) mushafScreen.classList.toggle('mushaf-night-mode', _mushafNightMode);
+    safeLocalStorageSet('nafs_mushaf_night', _mushafNightMode ? '1' : '0');
+    showToast(_mushafNightMode ? '🌙 وضع القراءة الليلية' : '☀️ الوضع العادي');
+    // Update the toggle button icon
+    const btn = mushafScreen?.querySelector('.mushaf-top-bar .mushaf-fullscreen-btn');
+    if (btn) btn.innerHTML = `<i class="fas ${_mushafNightMode ? 'fa-sun' : 'fa-moon'}"></i>`;
+};
+
+function loadMushafNightMode() {
+    _mushafNightMode = safeLocalStorageGet('nafs_mushaf_night') === '1';
+    const mushafScreen = document.getElementById('screen-mushaf');
+    if (mushafScreen && _mushafNightMode) mushafScreen.classList.add('mushaf-night-mode');
+}
+
+// =========================================================================
+//  Fasting Tracker (تتبع الصيام)
+// =========================================================================
+function renderFasting() {
+    if (!appState.fastingLogs) appState.fastingLogs = {};
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthName = today.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+
+    // Sunnah fasting days this month
+    const sunnahDays = getSunnahFastingDays(year, month);
+    const fastingCount = countMonthlyFasting();
+
+    let daysHtml = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isFasted = appState.fastingLogs[dateStr];
+        const isToday = d === today.getDate();
+        const isSunnah = sunnahDays.includes(d);
+        const classes = `fasting-day-btn ${isFasted ? 'fasted' : ''} ${isToday ? 'today' : ''}`;
+        const title = isSunnah ? 'يوم سنة' : '';
+        daysHtml += `<button class="${classes}" onclick="toggleFasting('${dateStr}')" title="${title}">
+            ${d}${isSunnah ? '<span style="position:absolute;top:-2px;right:-2px;font-size:6px;color:#c9a84c">●</span>' : ''}
+        </button>`;
+    }
+
+    document.getElementById('screen-fasting').innerHTML = `
+        <div class="card p-5 space-y-4">
+            <div class="flex items-center gap-3"><span class="text-3xl">🌙</span><h2 class="text-2xl font-bold text-gold">تتبع الصيام</h2></div>
+
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="card p-3 glass-card">
+                    <p class="text-2xl font-black text-gold">${fastingCount}</p>
+                    <p class="text-xs text-[var(--text-muted)]">يوم هذا الشهر</p>
+                </div>
+                <div class="card p-3 glass-card">
+                    <p class="text-2xl font-black text-gold">${Object.keys(appState.fastingLogs).length}</p>
+                    <p class="text-xs text-[var(--text-muted)]">إجمالي الأيام</p>
+                </div>
+                <div class="card p-3 glass-card">
+                    <p class="text-2xl font-black text-gold">${getFastingStreak()}</p>
+                    <p class="text-xs text-[var(--text-muted)]">أطول سلسلة</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-bold text-gold mb-3">${monthName}</h3>
+                <p class="text-xs text-[var(--text-muted)] mb-2">● أيام السنة (الإثنين، الخميس، الأيام البيض)</p>
+                <div class="grid grid-cols-7 gap-2 justify-items-center" style="position:relative">
+                    ${daysHtml}
+                </div>
+            </div>
+
+            <div class="card p-4" style="background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15)">
+                <h4 class="text-sm font-bold text-gold mb-2">🕌 أيام السنة القادمة</h4>
+                <p class="text-sm text-[var(--text-secondary)]">${getUpcomingSunnahDaysText()}</p>
+            </div>
+        </div>`;
+}
+
+window.toggleFasting = async function (dateStr) {
+    if (!appState.fastingLogs) appState.fastingLogs = {};
+    if (appState.fastingLogs[dateStr]) {
+        delete appState.fastingLogs[dateStr];
+    } else {
+        appState.fastingLogs[dateStr] = true;
+        // Award points for fasting
+        appState.totalPoints = (appState.totalPoints || 0) + 15;
+        appState.level = Math.floor(appState.totalPoints / 100) + 1;
+        await saveUserField('totalPoints', appState.totalPoints);
+        await saveUserField('level', appState.level);
+        showToast('🌙 بارك الله في صيامك! +15 نقطة');
+    }
+    await saveUserField('fastingLogs', appState.fastingLogs);
+    renderFasting();
+};
+
+function countMonthlyFasting() {
+    if (!appState?.fastingLogs) return 0;
+    const now = new Date();
+    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return Object.keys(appState.fastingLogs).filter(k => k.startsWith(prefix)).length;
+}
+
+function getFastingStreak() {
+    if (!appState?.fastingLogs) return 0;
+    const dates = Object.keys(appState.fastingLogs).sort().reverse();
+    if (dates.length === 0) return 0;
+    let streak = 1;
+    for (let i = 1; i < dates.length; i++) {
+        const prev = new Date(dates[i - 1]);
+        const curr = new Date(dates[i]);
+        const diff = (prev - curr) / (1000 * 60 * 60 * 24);
+        if (Math.abs(diff - 1) < 0.5) streak++;
+        else break;
+    }
+    return streak;
+}
+
+function getSunnahFastingDays(year, month) {
+    const days = [];
+    for (let d = 1; d <= 31; d++) {
+        const date = new Date(year, month, d);
+        if (date.getMonth() !== month) break;
+        const dow = date.getDay(); // 0=Sun, 1=Mon, 4=Thu
+        if (dow === 1 || dow === 4) days.push(d); // Monday & Thursday
+    }
+    // Ayyam al-Beed (13, 14, 15 of each Hijri month — approximate with Gregorian 13-15)
+    [13, 14, 15].forEach(d => { if (d <= new Date(year, month + 1, 0).getDate() && !days.includes(d)) days.push(d); });
+    return days.sort((a, b) => a - b);
+}
+
+function getUpcomingSunnahDaysText() {
+    const now = new Date();
+    const sunnahDays = getSunnahFastingDays(now.getFullYear(), now.getMonth());
+    const upcoming = sunnahDays.filter(d => d > now.getDate()).slice(0, 3);
+    if (upcoming.length === 0) return 'لا توجد أيام متبقية هذا الشهر';
+    const dayNames = upcoming.map(d => {
+        const date = new Date(now.getFullYear(), now.getMonth(), d);
+        const name = date.toLocaleDateString('ar-EG', { weekday: 'long' });
+        return `${name} ${d}`;
+    });
+    return dayNames.join(' — ');
+}
+
 /**
  * Show a styled floating banner when a SW update is available.
  * Clicking the banner tells the waiting worker to activate, which triggers
@@ -5825,10 +6412,15 @@ authUnsubscribe = auth.onAuthStateChanged(async (user) => {
             startDailyResetChecker();
             startReminderChecker();
             initBackToTop();
+            restoreOfflineQueue();
             renderMainApp();
+            loadMushafNightMode();
             // Show onboarding for first-time users
             if (!safeLocalStorageGet('nafs_onboarding_v2_done')) {
                 showOnboarding();
+            } else {
+                // Show what's new for returning users (once per version)
+                showWhatsNew();
             }
             loadingScreen.style.display = 'none';
             appDiv.style.display = 'block';

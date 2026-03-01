@@ -3832,3 +3832,535 @@ body.focus-mode::after {
     z-index: 200;
     backdrop-filter: blur(8px);
 }
+
+/* =========================================================================
+   Emergency Mode — لحظة تأمل (3-phase design)
+   ========================================================================= */
+
+/* Ring animations */
+.em-rings {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.em-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(201, 168, 76, 0.07);
+    animation: emRingPulse 7s ease-in-out infinite;
+}
+
+.em-ring:nth-child(1) {
+    width: 280px;
+    height: 280px;
+    animation-delay: 0s;
+}
+
+.em-ring:nth-child(2) {
+    width: 480px;
+    height: 480px;
+    animation-delay: 1s;
+}
+
+.em-ring:nth-child(3) {
+    width: 680px;
+    height: 680px;
+    animation-delay: 2s;
+}
+
+.em-ring:nth-child(4) {
+    width: 880px;
+    height: 880px;
+    animation-delay: 3s;
+}
+
+@keyframes emRingPulse {
+
+    0%,
+    100% {
+        transform: scale(.97);
+        opacity: .25;
+    }
+
+    50% {
+        transform: scale(1.03);
+        opacity: .8;
+    }
+}
+
+/* Stars */
+#em-stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+}
+
+.em-star {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.5);
+    animation: emTwinkle var(--d, 3s) ease-in-out infinite;
+    animation-delay: var(--dl, 0s);
+}
+
+@keyframes emTwinkle {
+
+    0%,
+    100% {
+        opacity: .15;
+    }
+
+    50% {
+        opacity: .9;
+    }
+}
+
+/* Layout */
+.em-container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+/* Phase transitions */
+.em-phase {
+    animation: emFadeUp .7s ease both;
+}
+
+.em-phase.em-hidden {
+    display: none !important;
+}
+
+@keyframes emFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Phase nav dots */
+.em-phase-dots {
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    margin-bottom: 1.8rem;
+}
+
+.em-phase-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, .2);
+    transition: all .3s;
+}
+
+.em-phase-dot.active {
+    background: rgba(201, 168, 76, .7);
+    transform: scale(1.3);
+}
+
+/* ── Phase 1: Breathe ── */
+.em-breath-orb {
+    width: 148px;
+    height: 148px;
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    background: radial-gradient(circle, rgba(201, 168, 76, .13) 0%, rgba(201, 168, 76, .02) 70%);
+    border: 1.5px solid rgba(201, 168, 76, .25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.2rem;
+    animation: emBreatheOrb 4s ease-in-out infinite;
+}
+
+@keyframes emBreatheOrb {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(201, 168, 76, .08);
+    }
+
+    50% {
+        transform: scale(1.13);
+        box-shadow: 0 0 55px 15px rgba(201, 168, 76, .1);
+    }
+}
+
+.em-phase-label {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(201, 168, 76, .5);
+    margin-bottom: .6rem;
+}
+
+.em-breath-instruction {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: rgba(242, 234, 216, .92);
+    min-height: 2.4rem;
+    transition: opacity .4s;
+}
+
+.em-progress-track {
+    height: 2px;
+    background: rgba(255, 255, 255, .06);
+    border-radius: 2px;
+    width: 180px;
+    margin: 1.6rem auto 0;
+    overflow: hidden;
+}
+
+.em-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, rgba(201, 168, 76, .35), #c9a84c);
+    transition: width 1s linear;
+}
+
+.em-dua-hint {
+    margin-top: 1.4rem;
+    font-family: 'Amiri', serif;
+    font-size: .95rem;
+    color: rgba(201, 168, 76, .4);
+    font-style: italic;
+}
+
+/* ── Phase 2: Reflection ── */
+.em-glass-card {
+    background: rgba(255, 255, 255, .025);
+    border: 1px solid rgba(201, 168, 76, .11);
+    border-radius: 22px;
+    padding: 1.6rem 1.8rem;
+    backdrop-filter: blur(12px);
+    margin-bottom: 1rem;
+}
+
+.em-ayah-text {
+    font-family: 'Amiri Quran', 'Amiri', serif;
+    font-size: 1.32rem;
+    line-height: 2.3;
+    color: rgba(242, 234, 216, .95);
+    margin-bottom: .5rem;
+}
+
+.em-hadith-text {
+    font-family: 'Amiri', serif;
+    font-size: 1.08rem;
+    line-height: 1.95;
+    color: rgba(242, 234, 216, .78);
+    margin-bottom: .4rem;
+}
+
+.em-source-tag {
+    font-size: .75rem;
+    color: rgba(201, 168, 76, .45);
+}
+
+.em-btn-tawba {
+    margin-top: 1.8rem;
+    padding: .85rem 2.2rem;
+    background: transparent;
+    border: 1px solid rgba(201, 168, 76, .3);
+    border-radius: 14px;
+    color: rgba(201, 168, 76, .85);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.em-btn-tawba:hover {
+    border-color: rgba(201, 168, 76, .65);
+    color: #c9a84c;
+}
+
+/* ── Phase 3: Action ── */
+.em-action-card {
+    background: linear-gradient(135deg, rgba(201, 168, 76, .09), rgba(201, 168, 76, .03));
+    border: 1px solid rgba(201, 168, 76, .22);
+    border-radius: 22px;
+    padding: 1.8rem 1.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.em-action-icon {
+    font-size: 2.4rem;
+    display: block;
+    margin-bottom: .7rem;
+}
+
+.em-action-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #c9a84c;
+    margin-bottom: .35rem;
+}
+
+.em-action-sub {
+    font-size: .88rem;
+    color: rgba(242, 234, 216, .45);
+    line-height: 1.6;
+}
+
+.em-timer-label {
+    font-size: .7rem;
+    letter-spacing: .18em;
+    color: rgba(201, 168, 76, .35);
+    margin-bottom: .15rem;
+}
+
+.em-timer-display {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: rgba(201, 168, 76, .65);
+    letter-spacing: .04em;
+    margin-bottom: 1.2rem;
+}
+
+.em-btn-commit {
+    width: 100%;
+    padding: 1.1rem;
+    background: linear-gradient(135deg, rgba(201, 168, 76, .18), rgba(201, 168, 76, .08));
+    border: 2px solid rgba(201, 168, 76, .45);
+    border-radius: 16px;
+    color: #c9a84c;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: block;
+    transition: all .25s;
+    margin-bottom: .7rem;
+}
+
+.em-btn-commit:hover {
+    background: linear-gradient(135deg, rgba(201, 168, 76, .28), rgba(201, 168, 76, .14));
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(201, 168, 76, .12);
+}
+
+.em-btn-ghost {
+    width: 100%;
+    padding: .6rem;
+    background: none;
+    border: none;
+    color: rgba(242, 234, 216, .2);
+    font-family: 'Tajawal', sans-serif;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: color .2s;
+}
+
+.em-btn-ghost:hover {
+    color: rgba(242, 234, 216, .45);
+}
+
+/* =========================================================================
+   Skeleton Loading
+   ========================================================================= */
+.skeleton {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.04) 25%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+    border-radius: 12px;
+}
+
+.skeleton-card {
+    height: 80px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skeleton-line {
+    height: 14px;
+    margin-bottom: 8px;
+}
+
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* =========================================================================
+   Night Reading Mode (Quran)
+   ========================================================================= */
+.mushaf-night-mode .mushaf-wrapper {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mushaf-night-mode .mushaf-top-bar,
+.mushaf-night-mode .mushaf-bottom-bar {
+    background: linear-gradient(135deg, #0a0a0a, #111) !important;
+    border-color: rgba(201, 168, 76, 0.2) !important;
+}
+
+.mushaf-night-mode .mushaf-page-container {
+    background: #0d0d08 !important;
+}
+
+.mushaf-night-mode .mushaf-page-container::before,
+.mushaf-night-mode .mushaf-page-container::after {
+    display: none !important;
+}
+
+.mushaf-night-mode .mushaf-text-body {
+    color: #e8dfc4 !important;
+}
+
+.mushaf-night-mode .mushaf-surah-header {
+    background: rgba(201, 168, 76, 0.08) !important;
+    border-color: rgba(201, 168, 76, 0.2) !important;
+    box-shadow: none !important;
+}
+
+.mushaf-night-mode .mushaf-surah-name {
+    color: #c9a84c !important;
+}
+
+.mushaf-night-mode .mushaf-bismillah {
+    color: #c9a84c !important;
+    opacity: 0.8 !important;
+}
+
+.mushaf-night-mode .mushaf-ayah-marker {
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 30%, transparent 100%) !important;
+    border-color: rgba(201, 168, 76, 0.25) !important;
+    box-shadow: none !important;
+}
+
+.mushaf-night-mode .mushaf-marker-inner {
+    color: #c9a84c !important;
+}
+
+.mushaf-night-mode .mushaf-surah-ornament {
+    color: rgba(201, 168, 76, 0.4) !important;
+}
+
+/* =========================================================================
+   Fasting Tracker
+   ========================================================================= */
+.fasting-day-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(201, 168, 76, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fasting-day-btn.fasted {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: rgba(74, 222, 128, 0.5);
+    color: #4ade80;
+}
+
+.fasting-day-btn.today {
+    border-color: rgba(201, 168, 76, 0.6);
+    box-shadow: 0 0 8px rgba(201, 168, 76, 0.2);
+}
+
+.fasting-day-btn:hover {
+    transform: scale(1.1);
+    border-color: rgba(201, 168, 76, 0.5);
+}
+
+/* =========================================================================
+   Accessibility — Focus visible ring
+   ========================================================================= */
+*:focus-visible {
+    outline: 2px solid rgba(201, 168, 76, 0.7);
+    outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid rgba(201, 168, 76, 0.7);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Skip to content link (screen reader) */
+.sr-skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-gold);
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 0 0 8px 8px;
+    font-weight: 700;
+    z-index: 9999;
+    transition: top 0.2s;
+}
+
+.sr-skip-link:focus {
+    top: 0;
+}
+
+/* Screen reader only text */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* =========================================================================
+   Share Progress Image Canvas
+   ========================================================================= */
+.share-image-preview {
+    max-width: 100%;
+    border-radius: 16px;
+    border: 2px solid rgba(201, 168, 76, 0.3);
+    margin: 1rem auto;
+    display: block;
+}
