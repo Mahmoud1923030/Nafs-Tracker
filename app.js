@@ -29,9 +29,8 @@ window.addEventListener('unhandledrejection', function (e) {
 });
 
 db.settings({
-    cache: {
-        kind: 'persistentMultipleTab'
-    }
+    cache: { kind: 'persistentMultipleTab' },
+    merge: true
 });
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
