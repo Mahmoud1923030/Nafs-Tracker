@@ -28,9 +28,10 @@ window.addEventListener('unhandledrejection', function (e) {
     }
 });
 
-db.settings({
-    cache: { kind: 'persistentMultipleTab' },
-    merge: true
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+        console.warn('Firestore persistence error:', err);
+    }
 });
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
