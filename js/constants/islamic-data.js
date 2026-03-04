@@ -3,8 +3,7 @@
 //  Extracted from app.js for modularity
 // =========================================================================
 export const COUNTRIES = [
-    { name: 'السعودية', lat: 24.7136, lng: 46.6753, method: 4 },
-    { name: 'الإمارات', lat: 24.4539, lng: 54.3773, method: 4 },
+    { name: 'أبوظبي (الإمارات)', lat: 24.4539, lng: 54.3773, method: 4 },
     { name: 'مصر', lat: 30.0444, lng: 31.2357, method: 5 },
     { name: 'قطر', lat: 25.2854, lng: 51.5310, method: 5 },
     { name: 'الكويت', lat: 29.3769, lng: 47.9774, method: 4 },
@@ -33,7 +32,7 @@ export const COUNTRIES = [
 ];
 
 export const ADHAN_URLS = {
-    'Fajr': 'https://download.tvquran.com/download/selections/azans/Athan-Alafasy.mp3',
+    'Fajr': 'https://download.tvquran.com/download/selections/azans/Fajr-Athan-Alafasy.mp3',
     'Dhuhr': 'https://download.tvquran.com/download/selections/azans/Athan-Alafasy.mp3',
     'Asr': 'https://download.tvquran.com/download/selections/azans/Athan-Alafasy.mp3',
     'Maghrib': 'https://download.tvquran.com/download/selections/azans/Athan-Alafasy.mp3',

@@ -10,3 +10,6 @@ Thumbs.db
 .vscode/
 *.log
 npm-debug.log*
+
+# Firebase config (contains API key)
+js/firebase-config.js

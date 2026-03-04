@@ -6462,7 +6462,7 @@ function renderAI() {
                 style="flex:1;padding:0.85rem 1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:14px;color:rgba(242,234,216,0.9);font-family:inherit;font-size:0.95rem;outline:none;transition:border-color 0.2s"
                 onfocus="this.style.borderColor='rgba(201,168,76,0.5)'"
                 onblur="this.style.borderColor='rgba(201,168,76,0.2)'">
-            <button onclick="window._aiSend()"
+            <button id="ai-send-btn" onclick="window._aiSend()"
                 style="width:46px;height:46px;flex-shrink:0;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;color:#c9a84c;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s"
                 onmouseover="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15))';this.style.transform='scale(1.05)'"
                 onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))';this.style.transform='scale(1)'">

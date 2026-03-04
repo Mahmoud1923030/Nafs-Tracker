@@ -6,6 +6,7 @@
 
 const AI_WORKER_URL = 'https://flat-base-2b1b.mahmoud-1923030.workers.dev';
 const AI_USAGE_KEY = 'nafs_ai_usage';
+const AI_MAX_MESSAGES = 50; // الحد الأقصى للرسائل قبل حذف القديمة
 
 // ── تتبع الاستخدام — بيشتغل تلقائياً ──
 window.trackAppOpen = function () {
@@ -39,6 +40,7 @@ window.trackEmergencyUse = function () {
 // ── كلام الـ Worker ──
 async function askAICoach(userMessage) {
     const usageStats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+    const state = window.appState || {};
 
     const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
@@ -46,13 +48,13 @@ async function askAICoach(userMessage) {
         body: JSON.stringify({
             userMessage,
             userData: {
-                preferredName: window.appState?.preferredName,
-                streak: window.appState?.streak,
-                longestStreak: window.appState?.longestStreak,
-                level: window.appState?.level,
-                totalPoints: window.appState?.totalPoints,
-                adhkarProgress: window.appState?.adhkarProgress,
-                prayerLogs: window.appState?.prayerLogs,
+                preferredName: state.preferredName || 'مستخدم',
+                streak: state.streak || 0,
+                longestStreak: state.longestStreak || 0,
+                level: state.level || 1,
+                totalPoints: state.totalPoints || 0,
+                adhkarProgress: state.adhkarProgress || {},
+                prayerLogs: state.prayerLogs || {},
             },
             usageStats,
         })
@@ -87,14 +89,27 @@ function _aiAddMessage(role, content) {
     `;
     div.innerText = content;
     msgs.appendChild(div);
+
+    // حذف الرسائل القديمة لو تجاوزت الحد
+    const allMessages = msgs.querySelectorAll('div:not([data-empty])');
+    if (allMessages.length > AI_MAX_MESSAGES) {
+        const toRemove = allMessages.length - AI_MAX_MESSAGES;
+        for (let i = 0; i < toRemove; i++) allMessages[i].remove();
+    }
+
     msgs.scrollTop = msgs.scrollHeight;
 }
 
 // ── إرسال رسالة ──
 window._aiSend = async function () {
     const input = document.getElementById('ai-input');
+    const sendBtn = document.getElementById('ai-send-btn');
     const msg = input?.value?.trim();
     if (!msg) return;
+
+    // تعطيل الإدخال أثناء الإرسال
+    if (input) input.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
 
     input.value = '';
     _aiAddMessage('user', msg);
@@ -115,6 +130,11 @@ window._aiSend = async function () {
         } else {
             _aiAddMessage('assistant', `خطأ: ${errMsg || 'في مشكلة في الاتصال — جرب تاني'} ❌`);
         }
+    } finally {
+        // إعادة تفعيل الإدخال
+        if (input) input.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) input.focus();
     }
 };
 

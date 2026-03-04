@@ -386,11 +386,11 @@ export const DEFAULT_EVENING_AZKAR = [
         id: 'e14',
         text: 'اللهم اني اسالك علما نافعا، ورزقا طيبا، وعملا متقبلا',
         surah: '',
-        virtue: 'دعاء طلب العلم النافع والرزق الحسن (ورد بعد صلاة الفجر خاصة).',
+        virtue: 'دعاء طلب العلم النافع والرزق الحسن — يُقال بعد صلاة الفجر خاصة.',
         count: 1,
-        category: 'evening',
+        category: 'morning',
         points: 6,
-        reference: 'رواه ابن ماجه (925) — الحديث خاص بعد الفجر، ويُدعى به كدعاء عام'
+        reference: 'رواه ابن ماجه (925) — حديث أم سلمة: كان النبي ﷺ يقول بعد صلاة الفجر'
     },
     {
         id: 'e15',
@@ -632,8 +632,8 @@ export const DEFAULT_NIGHT_AZKAR = [
         id: 'n14',
         text: 'سبحان الله (٣٣) والحمد لله (٣٣) والله اكبر (٣٤)',
         surah: '',
-        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم، وهو خير لكما من خادم.',
-        count: 100, // مجموعهم 100
+        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم، وهو خير لكما من خادم. (مجموع التسبيحات ١٠٠: ٣٣+٣٣+٣٤)',
+        count: 1, // مجموعة واحدة (33 تسبيح + 33 تحميد + 34 تكبير = 100)
         category: 'night',
         points: 10,
         reference: 'متفق عليه: رواه البخاري (5362) ومسلم (2727)'
@@ -766,8 +766,8 @@ export const DEFAULT_AFTER_PRAYER_AZKAR = [
         id: 'p3',
         text: 'سبحان الله (33)، الحمد لله (33)، الله أكبر (33)',
         surah: '',
-        virtue: 'التسبيح بعد كل صلاة.',
-        count: 99, // مجموعهم 33+33+33 = 99
+        virtue: 'التسبيح بعد كل صلاة. يُتمّ المئة بقول (p4): لا إله إلا الله وحده لا شريك له.',
+        count: 1, // مجموعة واحدة (33+33+33 = 99، ثم p4 تكمل المئة)
         category: 'afterprayer',
         points: 10,
         reference: 'متفق عليه: رواه البخاري (843) ومسلم (595)'
@@ -927,7 +927,8 @@ export const DEFAULT_AFTER_PRAYER_AZKAR = [
 
 export const DEFAULT_NAWAFL = [
     { id: 'nafl_fajr_default', name: 'سنة الفجر', rakaat: 2, time: 'fajr', notes: 'قبل صلاة الفجر', points: 5 },
-    { id: 'nafl_dhuhr_default', name: 'سنة الظهر', rakaat: 4, time: 'dhuhr', notes: 'قبل صلاة الظهر', points: 5 },
+    { id: 'nafl_dhuhr_pre_default', name: 'سنة الظهر القبلية', rakaat: 4, time: 'dhuhr', notes: 'قبل صلاة الظهر', points: 5 },
+    { id: 'nafl_dhuhr_post_default', name: 'سنة الظهر البعدية', rakaat: 2, time: 'dhuhr', notes: 'بعد صلاة الظهر', points: 5 },
     { id: 'nafl_maghrib_default', name: 'سنة المغرب', rakaat: 2, time: 'maghrib', notes: 'بعد صلاة المغرب', points: 5 },
     { id: 'nafl_isha_default', name: 'سنة العشاء', rakaat: 2, time: 'isha', notes: 'بعد صلاة العشاء', points: 5 },
     { id: 'nafl_tahajjud_default', name: 'قيام الليل', rakaat: 2, time: 'tahajjud', notes: 'أقل قيام الليل', points: 10 },
