@@ -1,0 +1,126 @@
+// =========================================================================
+//  AI Coach — نفس
+//  Cloudflare Worker: flat-base-2b1b.mahmoud-1923030.workers.dev
+//  Model: llama-3.3-70b-instruct-fp8-fast
+// =========================================================================
+
+const AI_WORKER_URL = 'https://flat-base-2b1b.mahmoud-1923030.workers.dev';
+const AI_USAGE_KEY = 'nafs_ai_usage';
+
+// ── تتبع الاستخدام — بيشتغل تلقائياً ──
+window.trackAppOpen = function () {
+    try {
+        const stats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+        stats.openCount = (stats.openCount || 0) + 1;
+        stats.lastOpenTime = new Date().toISOString();
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(stats));
+    } catch (e) { }
+};
+
+window.trackScreenVisit = function (screenId) {
+    try {
+        const stats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+        stats.screenVisits = stats.screenVisits || {};
+        stats.screenVisits[screenId] = (stats.screenVisits[screenId] || 0) + 1;
+        stats.mostVisitedScreen = Object.entries(stats.screenVisits)
+            .sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(stats));
+    } catch (e) { }
+};
+
+window.trackEmergencyUse = function () {
+    try {
+        const stats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+        stats.emergencyCount = (stats.emergencyCount || 0) + 1;
+        localStorage.setItem(AI_USAGE_KEY, JSON.stringify(stats));
+    } catch (e) { }
+};
+
+// ── كلام الـ Worker ──
+async function askAICoach(userMessage) {
+    const usageStats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
+
+    const response = await fetch(AI_WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            userMessage,
+            userData: {
+                preferredName: window.appState?.preferredName,
+                streak: window.appState?.streak,
+                longestStreak: window.appState?.longestStreak,
+                level: window.appState?.level,
+                totalPoints: window.appState?.totalPoints,
+                adhkarProgress: window.appState?.adhkarProgress,
+                prayerLogs: window.appState?.prayerLogs,
+            },
+            usageStats,
+        })
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return data.reply || null;
+}
+
+// ── إضافة رسالة في الشاشة ──
+function _aiAddMessage(role, content) {
+    const msgs = document.getElementById('ai-messages');
+    if (!msgs) return;
+
+    // امسح رسالة "ابدأ محادثة" لو موجودة
+    const empty = msgs.querySelector('[data-empty]');
+    if (empty) empty.remove();
+
+    const div = document.createElement('div');
+    div.style.cssText = `
+        max-width: 85%;
+        padding: 0.75rem 1rem;
+        border-radius: ${role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
+        background: ${role === 'user' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)'};
+        border: 1px solid ${role === 'user' ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)'};
+        align-self: ${role === 'user' ? 'flex-end' : 'flex-start'};
+        color: rgba(242,234,216,0.9);
+        font-size: 0.95rem;
+        line-height: 1.7;
+        animation: fadeIn 0.3s ease;
+    `;
+    div.innerText = content;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── إرسال رسالة ──
+window._aiSend = async function () {
+    const input = document.getElementById('ai-input');
+    const msg = input?.value?.trim();
+    if (!msg) return;
+
+    input.value = '';
+    _aiAddMessage('user', msg);
+
+    const typing = document.getElementById('ai-typing');
+    if (typing) typing.classList.remove('hidden');
+
+    try {
+        const reply = await askAICoach(msg);
+        if (typing) typing.classList.add('hidden');
+        _aiAddMessage('assistant', reply || 'معلش، في مشكلة. جرب تاني.');
+    } catch (err) {
+        console.error('[AI Coach]', err);
+        if (typing) typing.classList.add('hidden');
+        const errMsg = err?.message || '';
+        if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+            _aiAddMessage('assistant', 'مشكلة CORS أو اتصال — لازم تفتح التطبيق من nafs-tracker-live.vercel.app ❌');
+        } else {
+            _aiAddMessage('assistant', `خطأ: ${errMsg || 'في مشكلة في الاتصال — جرب تاني'} ❌`);
+        }
+    }
+};
+
+// ── أسئلة سريعة ──
+window._aiQuickAsk = function (q) {
+    const input = document.getElementById('ai-input');
+    if (input) { input.value = q; input.focus(); }
+    window._aiSend();
+};

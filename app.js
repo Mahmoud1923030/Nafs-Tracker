@@ -1430,7 +1430,7 @@ function renderMainApp() {
             ['mushaf', '📖', 'المصحف'], ['quran', '📊', 'تتبع القرآن'], ['tasbih', '🧿', 'السبحة'], ['hadith', '📜', 'حديث اليوم'],
             ['qibla', '🧭', 'القبلة'], ['names99', '✨', 'أسماء الله'], ['dua', '🤲', 'أدعية'], ['analysis', '📈', 'التحليل'], ['podcasts', '🎙️', 'البودكاستات'],
             ['journal', '📔', 'يومياتي'], ['rewards', '🏆', 'المكافآت'], ['reminders', '⏰', 'التذكيرات'],
-            ['zakat', '💰', 'الزكاة'], ['adhan', '🔔', 'الأذان'], ['fasting', '🌙', 'الصيام'], ['settings', '⚙️', 'الإعدادات']
+            ['zakat', '💰', 'الزكاة'], ['adhan', '🔔', 'الأذان'], ['fasting', '🌙', 'الصيام'], ['feedback', '🕊️', 'صوتك يهمنا'], ['ai', '🤖', 'نفس AI'], ['settings', '⚙️', 'الإعدادات']
         ].map(([id, icon, label]) => `
                     <button onclick="showScreen('${id}')" id="nav-${id}" class="nav-link">
                         <span>${icon}</span><span class="font-semibold">${label}</span>
@@ -1440,7 +1440,7 @@ function renderMainApp() {
 
     const screens = `
         <main class="flex-1 min-w-0">
-            ${['dashboard', 'adhkar', 'prayer', 'mushaf', 'quran', 'analysis', 'podcasts', 'journal', 'rewards', 'reminders', 'zakat', 'adhan', 'settings', 'tasbih', 'qibla', 'names99', 'hadith', 'dua', 'privacy', 'fasting']
+            ${['dashboard', 'adhkar', 'prayer', 'mushaf', 'quran', 'analysis', 'podcasts', 'journal', 'rewards', 'reminders', 'zakat', 'adhan', 'settings', 'tasbih', 'qibla', 'names99', 'hadith', 'dua', 'privacy', 'fasting', 'feedback', 'ai']
             .map(id => `<div id="screen-${id}" class="screen hidden space-y-5"></div>`).join('')}
         </main>`;
 
@@ -1469,6 +1469,9 @@ function renderMainApp() {
         // Save last screen for "continue where you left off"
         safeLocalStorageSet('nafs_last_screen', screenId);
 
+        // AI usage tracking
+        if (typeof trackScreenVisit === 'function') trackScreenVisit(screenId);
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         destroyCharts();
@@ -1478,7 +1481,7 @@ function renderMainApp() {
             mushaf: renderMushaf, quran: renderQuran, zakat: renderZakat, adhan: renderAdhan, analysis: renderAnalysis, podcasts: renderPodcasts,
             journal: renderJournal, rewards: renderRewards, reminders: renderReminders,
             settings: renderSettings, tasbih: renderTasbih, qibla: renderQibla, names99: renderNames99, hadith: renderHadith, dua: renderDua, privacy: renderPrivacy,
-            fasting: renderFasting
+            fasting: renderFasting, feedback: renderFeedback, ai: renderAI
         };
         // Error boundary: wrap each render in try/catch with recovery options
         if (renders[screenId]) {
@@ -4756,6 +4759,7 @@ function emResetPhases() {
 }
 
 window.activateEmergency = function () {
+    if (typeof trackEmergencyUse === 'function') trackEmergencyUse();
     const overlay = document.getElementById('emergency-overlay');
     if (!overlay) return;
     emResetPhases();
@@ -6380,6 +6384,345 @@ initServiceWorker();
 // =========================================================================
 initSurahReadingModal();
 
+// =========================================================================
+//  صفحة صوتك يهمنا — Feedback
+// =========================================================================
+
+// rate limiting — ما يبعتش أكتر من مرة كل 60 ثانية
+let _feedbackLastSent = 0;
+
+// AI screen is dynamically rendered
+function renderAI() {
+    const el = document.getElementById('screen-ai');
+    if (!el) return;
+    el.setAttribute('dir', 'rtl');
+    el.innerHTML = `
+    <div style="max-width:520px;margin:0 auto;padding:1.5rem 1rem 5rem;display:flex;flex-direction:column;height:100%">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;gap:0.85rem;margin-bottom:1.5rem;padding:1rem 1.2rem;background:rgba(255,255,255,0.025);border:1px solid rgba(201,168,76,0.12);border-radius:18px">
+            <div style="width:46px;height:46px;flex-shrink:0;background:radial-gradient(circle,rgba(201,168,76,0.18),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.28);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 0 20px rgba(201,168,76,0.1)">
+                \u{1F916}
+            </div>
+            <div style="flex:1">
+                <h2 style="color:#c9a84c;font-size:1.1rem;font-weight:800;margin:0 0 0.15rem">نفس — مساعدك الشخصي</h2>
+                <p style="color:rgba(242,234,216,0.35);font-size:0.78rem;margin:0">بيعرف بياناتك ويساعدك تتحسن 🌿</p>
+            </div>
+        </div>
+
+        <!-- أسئلة سريعة -->
+        <div style="display:flex;gap:0.45rem;flex-wrap:wrap;margin-bottom:1rem">
+            <button onclick="window._aiQuickAsk('كيف أداؤي النهارده؟')"
+                style="padding:0.4rem 0.85rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:20px;color:rgba(201,168,76,0.75);font-size:0.8rem;cursor:pointer;font-family:inherit;transition:all 0.2s"
+                onmouseover="this.style.background='rgba(201,168,76,0.12)';this.style.borderColor='rgba(201,168,76,0.35)'"
+                onmouseout="this.style.background='rgba(201,168,76,0.06)';this.style.borderColor='rgba(201,168,76,0.18)'">
+                📊 كيف أداؤي النهارده؟
+            </button>
+            <button onclick="window._aiQuickAsk('محتاج تشجيع')"
+                style="padding:0.4rem 0.85rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:20px;color:rgba(201,168,76,0.75);font-size:0.8rem;cursor:pointer;font-family:inherit;transition:all 0.2s"
+                onmouseover="this.style.background='rgba(201,168,76,0.12)';this.style.borderColor='rgba(201,168,76,0.35)'"
+                onmouseout="this.style.background='rgba(201,168,76,0.06)';this.style.borderColor='rgba(201,168,76,0.18)'">
+                💪 محتاج تشجيع
+            </button>
+            <button onclick="window._aiQuickAsk('نصيحة لتحسين ذكري')"
+                style="padding:0.4rem 0.85rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:20px;color:rgba(201,168,76,0.75);font-size:0.8rem;cursor:pointer;font-family:inherit;transition:all 0.2s"
+                onmouseover="this.style.background='rgba(201,168,76,0.12)';this.style.borderColor='rgba(201,168,76,0.35)'"
+                onmouseout="this.style.background='rgba(201,168,76,0.06)';this.style.borderColor='rgba(201,168,76,0.18)'">
+                🌙 نصيحة لتحسين ذكري
+            </button>
+            <button onclick="window._aiQuickAsk('حلل عاداتي')"
+                style="padding:0.4rem 0.85rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:20px;color:rgba(201,168,76,0.75);font-size:0.8rem;cursor:pointer;font-family:inherit;transition:all 0.2s"
+                onmouseover="this.style.background='rgba(201,168,76,0.12)';this.style.borderColor='rgba(201,168,76,0.35)'"
+                onmouseout="this.style.background='rgba(201,168,76,0.06)';this.style.borderColor='rgba(201,168,76,0.18)'">
+                📈 حلل عاداتي
+            </button>
+        </div>
+
+        <!-- منطقة المحادثة -->
+        <div id="ai-messages"
+            style="flex:1;min-height:280px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:0.65rem;margin-bottom:0.85rem;padding:0.5rem;scroll-behavior:smooth">
+            <!-- رسالة ترحيب -->
+            <div data-empty style="text-align:center;padding:2.5rem 1rem;color:rgba(242,234,216,0.3)">
+                <div style="font-size:2rem;margin-bottom:0.5rem">🌙</div>
+                <p style="margin:0;font-size:0.9rem">اسألني أي حاجة عن عباداتك</p>
+                <p style="margin:0.3rem 0 0;font-size:0.78rem;color:rgba(242,234,216,0.18)">بعرف streak وأذكارك وصلواتك</p>
+            </div>
+
+            <!-- رسالة "بيفكر" -->
+            <div id="ai-typing" class="hidden"
+                style="align-self:flex-start;padding:0.65rem 1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:18px 18px 18px 4px;color:rgba(242,234,216,0.4);font-size:0.85rem">
+                نفس بيفكر...
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div style="display:flex;gap:0.5rem;align-items:center">
+            <input id="ai-input" type="text" placeholder="اسأل نفس أي حاجة..."
+                onkeydown="if(event.key==='Enter') window._aiSend()"
+                style="flex:1;padding:0.85rem 1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:14px;color:rgba(242,234,216,0.9);font-family:inherit;font-size:0.95rem;outline:none;transition:border-color 0.2s"
+                onfocus="this.style.borderColor='rgba(201,168,76,0.5)'"
+                onblur="this.style.borderColor='rgba(201,168,76,0.2)'">
+            <button onclick="window._aiSend()"
+                style="width:46px;height:46px;flex-shrink:0;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;color:#c9a84c;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s"
+                onmouseover="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15))';this.style.transform='scale(1.05)'"
+                onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))';this.style.transform='scale(1)'">
+                ➤
+            </button>
+        </div>
+
+    </div>`;
+}
+
+function renderFeedback() {
+    const el = document.getElementById('screen-feedback');
+    if (!el) return;
+    el.innerHTML = `
+    <div dir="rtl" style="max-width:520px;margin:0 auto;padding:1.5rem 1rem 4rem">
+
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:2rem">
+            <div style="
+                width:80px;height:80px;
+                background:radial-gradient(circle,rgba(201,168,76,0.15),rgba(201,168,76,0.03));
+                border:1px solid rgba(201,168,76,0.3);
+                border-radius:50%;
+                display:flex;align-items:center;justify-content:center;
+                font-size:2rem;margin:0 auto 1rem;
+                box-shadow:0 0 30px rgba(201,168,76,0.1);
+            ">🕊️</div>
+            <h2 style="color:#c9a84c;font-size:1.6rem;font-weight:800;margin:0 0 0.4rem">صوتك يهمنا</h2>
+            <p style="color:rgba(242,234,216,0.45);font-size:0.9rem;margin:0">
+                رأيك بيساعدنا نتحسن — شكراً لك 🌿
+            </p>
+        </div>
+
+        <!-- نوع الرسالة -->
+        <div style="margin-bottom:1.2rem">
+            <p style="color:rgba(201,168,76,0.7);font-size:0.75rem;font-weight:700;letter-spacing:0.15em;margin-bottom:0.6rem">
+                نوع الرسالة
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem" id="feedback-type-btns">
+                <button onclick="window._selectFeedbackType(this,'🐛 بلّغ عن مشكلة')"
+                    class="feedback-type-btn"
+                    style="padding:0.7rem;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:rgba(242,234,216,0.7);font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s">
+                    🐛 بلّغ عن مشكلة
+                </button>
+                <button onclick="window._selectFeedbackType(this,'💡 اقتراح جديد')"
+                    class="feedback-type-btn"
+                    style="padding:0.7rem;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:rgba(242,234,216,0.7);font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s">
+                    💡 اقتراح جديد
+                </button>
+                <button onclick="window._selectFeedbackType(this,'❤️ كلمة شكر')"
+                    class="feedback-type-btn"
+                    style="padding:0.7rem;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:rgba(242,234,216,0.7);font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s">
+                    ❤️ كلمة شكر
+                </button>
+                <button onclick="window._selectFeedbackType(this,'🔒 مشكلة خصوصية')"
+                    class="feedback-type-btn"
+                    style="padding:0.7rem;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:rgba(242,234,216,0.7);font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s">
+                    🔒 مشكلة خصوصية
+                </button>
+            </div>
+            <input type="hidden" id="feedback-type" value="💡 اقتراح جديد">
+        </div>
+
+        <!-- الرسالة -->
+        <div style="margin-bottom:1.2rem">
+            <p style="color:rgba(201,168,76,0.7);font-size:0.75rem;font-weight:700;letter-spacing:0.15em;margin-bottom:0.6rem">
+                رسالتك <span style="color:#c0392b">*</span>
+            </p>
+            <textarea
+                id="feedback-message"
+                placeholder="اكتب رسالتك هنا..."
+                maxlength="500"
+                oninput="window._updateFeedbackCount(this)"
+                style="
+                    width:100%;min-height:130px;
+                    background:rgba(255,255,255,0.03);
+                    border:1px solid rgba(201,168,76,0.2);
+                    border-radius:14px;
+                    color:rgba(242,234,216,0.9);
+                    font-family:inherit;font-size:0.95rem;
+                    padding:1rem;resize:vertical;
+                    box-sizing:border-box;
+                    outline:none;line-height:1.7;
+                    transition:border-color 0.2s;
+                "
+                onfocus="this.style.borderColor='rgba(201,168,76,0.5)'"
+                onblur="this.style.borderColor='rgba(201,168,76,0.2)'"
+            ></textarea>
+            <p id="feedback-char-count"
+                style="color:rgba(242,234,216,0.25);font-size:0.75rem;text-align:left;margin:0.3rem 0 0">
+                0 / 500
+            </p>
+        </div>
+
+        <!-- اسم واختياري -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.5rem">
+            <div>
+                <p style="color:rgba(201,168,76,0.7);font-size:0.75rem;font-weight:700;letter-spacing:0.15em;margin-bottom:0.5rem">
+                    اسمك <span style="color:rgba(242,234,216,0.25);font-weight:400">(اختياري)</span>
+                </p>
+                <input id="feedback-name" type="text" placeholder="اسمك..."
+                    style="
+                        width:100%;padding:0.75rem 1rem;
+                        background:rgba(255,255,255,0.03);
+                        border:1px solid rgba(201,168,76,0.15);
+                        border-radius:12px;
+                        color:rgba(242,234,216,0.9);
+                        font-family:inherit;font-size:0.88rem;
+                        box-sizing:border-box;outline:none;
+                        transition:border-color 0.2s;
+                    "
+                    onfocus="this.style.borderColor='rgba(201,168,76,0.4)'"
+                    onblur="this.style.borderColor='rgba(201,168,76,0.15)'"
+                >
+            </div>
+            <div>
+                <p style="color:rgba(201,168,76,0.7);font-size:0.75rem;font-weight:700;letter-spacing:0.15em;margin-bottom:0.5rem">
+                    إيميلك <span style="color:rgba(242,234,216,0.25);font-weight:400">(لو عايز رد)</span>
+                </p>
+                <input id="feedback-email" type="email" placeholder="example@mail.com"
+                    style="
+                        width:100%;padding:0.75rem 1rem;
+                        background:rgba(255,255,255,0.03);
+                        border:1px solid rgba(201,168,76,0.15);
+                        border-radius:12px;
+                        color:rgba(242,234,216,0.9);
+                        font-family:inherit;font-size:0.88rem;
+                        box-sizing:border-box;outline:none;
+                        transition:border-color 0.2s;
+                    "
+                    onfocus="this.style.borderColor='rgba(201,168,76,0.4)'"
+                    onblur="this.style.borderColor='rgba(201,168,76,0.15)'"
+                >
+            </div>
+        </div>
+
+        <!-- زرار الإرسال -->
+        <button id="feedback-submit-btn" onclick="submitFeedback()"
+            style="
+                width:100%;padding:1rem;
+                background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));
+                border:2px solid rgba(201,168,76,0.45);
+                border-radius:16px;
+                color:#c9a84c;
+                font-family:inherit;font-size:1.05rem;font-weight:800;
+                cursor:pointer;
+                transition:all 0.25s;
+                letter-spacing:0.03em;
+            "
+            onmouseover="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.15))';this.style.transform='translateY(-1px)'"
+            onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08))';this.style.transform='translateY(0)'"
+        >
+            أرسل رسالتك 🕊️
+        </button>
+
+        <!-- رسالة النجاح (مخفية) -->
+        <div id="feedback-success"
+            style="
+                display:none;text-align:center;
+                padding:2rem;margin-top:1.5rem;
+                background:rgba(26,107,58,0.1);
+                border:1px solid rgba(26,107,58,0.3);
+                border-radius:16px;
+                animation: fadeIn 0.5s ease;
+            ">
+            <div style="font-size:2.5rem;margin-bottom:0.5rem">🌙</div>
+            <p style="color:#4caf82;font-weight:800;font-size:1.1rem;margin:0 0 0.3rem">وصلتنا رسالتك!</p>
+            <p style="color:rgba(242,234,216,0.45);font-size:0.85rem;margin:0">جزاك الله خيراً — هنراجعها بإذن الله</p>
+        </div>
+
+    </div>`;
+}
+
+window._selectFeedbackType = function (btn, type) {
+    // reset all buttons
+    document.querySelectorAll('.feedback-type-btn').forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.03)';
+        b.style.borderColor = 'rgba(201,168,76,0.15)';
+        b.style.color = 'rgba(242,234,216,0.7)';
+    });
+    // highlight selected
+    btn.style.background = 'rgba(201,168,76,0.12)';
+    btn.style.borderColor = 'rgba(201,168,76,0.45)';
+    btn.style.color = '#c9a84c';
+    // save value
+    document.getElementById('feedback-type').value = type;
+};
+
+window._updateFeedbackCount = function (textarea) {
+    const count = textarea.value.length;
+    const el = document.getElementById('feedback-char-count');
+    if (el) {
+        el.innerText = `${count} / 500`;
+        el.style.color = count > 450 ? '#c9a84c' : 'rgba(242,234,216,0.25)';
+    }
+};
+
+window.submitFeedback = async function () {
+    const type = document.getElementById('feedback-type')?.value || '💡 اقتراح جديد';
+    const message = document.getElementById('feedback-message')?.value.trim();
+    const name = document.getElementById('feedback-name')?.value.trim() || 'مجهول';
+    const email = document.getElementById('feedback-email')?.value.trim() || 'لم يذكر';
+
+    // validation
+    if (!message || message.length < 10) {
+        showToast('اكتب رسالتك الأول — على الأقل 10 حروف ✏️', 'warning');
+        return;
+    }
+
+    // rate limiting
+    const now = Date.now();
+    if (now - _feedbackLastSent < 60000) {
+        const remaining = Math.ceil((60000 - (now - _feedbackLastSent)) / 1000);
+        showToast(`استنى ${remaining} ثانية قبل ما ترسل تاني ⏳`, 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('feedback-submit-btn');
+    if (btn) { btn.disabled = true; btn.innerText = 'جاري الإرسال... ✉️'; }
+
+    const templateParams = {
+        feedback_type: type,
+        feedback_message: message,
+        user_name: name,
+        user_email: email,
+        user_id: currentUser?.uid || 'غير مسجل',
+        sent_at: new Date().toLocaleString('ar-EG'),
+    };
+
+    try {
+        // إرسال للأدمن
+        if (typeof emailjs === 'undefined' && typeof window.emailjs === 'undefined') {
+            throw new Error('EmailJS SDK not loaded');
+        }
+        const _emailjs = window.emailjs || emailjs;
+        await _emailjs.send('service_7vc9uhr', 'template_doxh81r', templateParams);
+
+        _feedbackLastSent = Date.now();
+
+        // إظهار رسالة النجاح
+        const successEl = document.getElementById('feedback-success');
+        if (successEl) successEl.style.display = 'block';
+
+        // مسح الحقول
+        if (document.getElementById('feedback-message')) document.getElementById('feedback-message').value = '';
+        if (document.getElementById('feedback-name')) document.getElementById('feedback-name').value = '';
+        if (document.getElementById('feedback-email')) document.getElementById('feedback-email').value = '';
+        window._updateFeedbackCount({ value: '' });
+
+        showToast('وصلتنا رسالتك — جزاك الله خيراً 🌙', 'success');
+
+    } catch (err) {
+        console.error('[Feedback] EmailJS error:', err);
+        const errMsg = err?.text || err?.message || JSON.stringify(err);
+        showToast(`خطأ: ${errMsg}`, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerText = 'أرسل رسالتك 🕊️'; }
+    }
+};
+
 if (authUnsubscribe) authUnsubscribe();
 
 // FIX: Improved auth observer with proper loading screen handling
@@ -6413,6 +6756,7 @@ authUnsubscribe = auth.onAuthStateChanged(async (user) => {
             startReminderChecker();
             initBackToTop();
             restoreOfflineQueue();
+            if (typeof trackAppOpen === 'function') trackAppOpen();
             renderMainApp();
             loadMushafNightMode();
             // Show onboarding for first-time users

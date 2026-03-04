@@ -26,8 +26,7 @@
 
     <!-- SEO / Open Graph -->
     <meta property="og:title" content="Nafs Tracker - متتبع العبادات">
-    <meta property="og:description"
-        content="تتبع أذكارك وصلواتك وقراءة القرآن يومياً - مجاناً">
+    <meta property="og:description" content="تتبع أذكارك وصلواتك وقراءة القرآن يومياً - مجاناً">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ar_EG">
     <meta name="twitter:card" content="summary">
@@ -192,8 +191,8 @@
         <!-- Mobile Bottom Navigation -->
         <nav class="mobile-bottom-nav" id="mobile-nav" role="navigation" aria-label="التنقل الرئيسي"
             style="display:none;">
-            <button class="mobile-nav-btn" id="mnav-dashboard" aria-label="????????" onclick="showScreen('dashboard')"><i
-                    class="fas fa-home"></i><span>الرئيسية</span></button>
+            <button class="mobile-nav-btn" id="mnav-dashboard" aria-label="????????"
+                onclick="showScreen('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button class="mobile-nav-btn" id="mnav-adhkar" aria-label="???????" onclick="showScreen('adhkar')"><i
                     class="fas fa-hands-praying"></i><span>الأذكار</span></button>
             <button class="mobile-nav-btn" id="mnav-mushaf" aria-label="??????" onclick="showScreen('mushaf')"><i
@@ -235,6 +234,10 @@
                         class="fas fa-bell"></i><span>تذكير</span></button>
                 <button class="mobile-nav-btn" onclick="showScreen('fasting');closeMoreMenu()"><i
                         class="fas fa-moon"></i><span>الصيام</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('feedback');closeMoreMenu()"><i
+                        class="fas fa-envelope-open-text"></i><span>صوتك يهمنا</span></button>
+                <button class="mobile-nav-btn" onclick="showScreen('ai');closeMoreMenu()"><i
+                        class="fas fa-robot"></i><span>نفس AI</span></button>
                 <button class="mobile-nav-btn" onclick="showScreen('settings');closeMoreMenu()"><i
                         class="fas fa-cog"></i><span>إعدادات</span></button>
             </div>
@@ -285,12 +288,12 @@
                 <div class="space-y-4">
                     <div><label class="block mb-2">نص الذكر</label><textarea id="edit-dhikr-text" rows="4"
                             class="resize-none"></textarea></div>
-                    <div><label class="block mb-2">العدد المطلوب</label><input type="number"
-                            id="edit-dhikr-count" min="1"></div>
+                    <div><label class="block mb-2">العدد المطلوب</label><input type="number" id="edit-dhikr-count"
+                            min="1"></div>
                     <div><label class="block mb-2">فضل الذكر</label><input type="text" id="edit-dhikr-virtue">
                     </div>
-                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number"
-                            id="edit-dhikr-points" min="1" value="5"></div>
+                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number" id="edit-dhikr-points"
+                            min="1" value="5"></div>
                     <div class="flex gap-3 pt-3">
                         <button onclick="saveEditedDhikr()"
                             class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
@@ -316,13 +319,12 @@
                         </select></div>
                     <div><label class="block mb-2">نص الذكر</label><textarea id="add-dhikr-text" rows="3"
                             class="resize-none"></textarea></div>
-                    <div><label class="block mb-2">العدد المطلوب</label><input type="number"
-                            id="add-dhikr-count" min="1" value="1"></div>
-                    <div><label class="block mb-2">فضل الذكر (اختياري)</label><input type="text"
-                            id="add-dhikr-virtue">
+                    <div><label class="block mb-2">العدد المطلوب</label><input type="number" id="add-dhikr-count"
+                            min="1" value="1"></div>
+                    <div><label class="block mb-2">فضل الذكر (اختياري)</label><input type="text" id="add-dhikr-virtue">
                     </div>
-                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number"
-                            id="add-dhikr-points" min="1" value="5"></div>
+                    <div><label class="block mb-2">نقاط الإتمام</label><input type="number" id="add-dhikr-points"
+                            min="1" value="5"></div>
                     <div class="flex gap-3 pt-3">
                         <button onclick="saveNewDhikr()"
                             class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
@@ -365,10 +367,9 @@
                 <div class="space-y-4">
                     <div><label class="block mb-2">اسم النافلة</label><input type="text" id="nafl-name"
                             placeholder="مثال: سنة الفجر"></div>
-                    <div><label class="block mb-2">عدد الركعات</label><input type="number" id="nafl-rakaat"
-                            min="1" max="12" value="2"></div>
-                    <div><label class="block mb-2">الوقت (اختياري)</label><select id="nafl-time"
-                            class="w-full">
+                    <div><label class="block mb-2">عدد الركعات</label><input type="number" id="nafl-rakaat" min="1"
+                            max="12" value="2"></div>
+                    <div><label class="block mb-2">الوقت (اختياري)</label><select id="nafl-time" class="w-full">
                             <option value="any">في أي وقت</option>
                             <option value="fajr">بعد الفجر</option>
                             <option value="dhuha">الضحى</option>
@@ -398,8 +399,8 @@
                 <div class="space-y-4">
                     <div><label class="block mb-2">عدد الصفحات المقروءة</label><input type="number"
                             id="quran-pages-count" min="1" max="604" value="1"></div>
-                    <div><label class="block mb-2">ملاحظة (اختياري)</label><input type="text"
-                            id="quran-pages-note" placeholder="مثال: من صفحة 50 إلى 55"></div>
+                    <div><label class="block mb-2">ملاحظة (اختياري)</label><input type="text" id="quran-pages-note"
+                            placeholder="مثال: من صفحة 50 إلى 55"></div>
                     <div class="flex gap-3 pt-3">
                         <button onclick="saveMultipleQuranPages()"
                             class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
@@ -464,8 +465,8 @@
             <div class="modal-content">
                 <h3 class="text-2xl font-bold text-gold mb-5">✏️ ضبط التقدم</h3>
                 <div class="space-y-4">
-                    <div><label class="block mb-2">العدد الحالي</label><input type="number"
-                            id="set-progress-value" min="0"></div>
+                    <div><label class="block mb-2">العدد الحالي</label><input type="number" id="set-progress-value"
+                            min="0"></div>
                     <div class="flex gap-3 pt-3">
                         <button onclick="saveManualProgress()"
                             class="flex-1 bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition">
@@ -589,6 +590,21 @@
             <i class="fas fa-arrow-up"></i>
         </button>
     </div>
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+        if (window.emailjs) {
+            emailjs.init("3tO8Am3Ul60CojJVD");
+        } else {
+            document.querySelector('script[src*="emailjs"]').addEventListener('load', function () {
+                emailjs.init("3tO8Am3Ul60CojJVD");
+            });
+        }
+    </script>
+
+    <!-- AI Coach -->
+    <script src="js/ai-coach.js"></script>
 
     <!-- Load External JavaScript Application (module: deferred by default) -->
     <script type="module" src="app.js"></script>

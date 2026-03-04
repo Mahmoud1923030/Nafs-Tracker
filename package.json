@@ -17,5 +17,21 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "dependencies": {
+    "docx": "^9.6.0"
+  },
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mahmoud1923030/Nafs-Tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Mahmoud1923030/Nafs-Tracker/issues"
+  },
+  "homepage": "https://github.com/Mahmoud1923030/Nafs-Tracker#readme"
 }
