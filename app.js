@@ -1213,7 +1213,7 @@ const NAFS_APP_VERSION = '2.5.0';
 
 function showWhatsNew() {
     // Only show if user already completed onboarding (not a new user)
-    if (!safeLocalStorageGet('nafs_onboarding_v2_done')) return;
+    if (!appState.onboardingCompleted) return;
     // Only show once per version
     if (safeLocalStorageGet('nafs_whats_new_seen') === NAFS_APP_VERSION) return;
 
@@ -1507,11 +1507,18 @@ function showOnboarding() {
     // ── Skip: go to AI directly ──
     window._obSkip = () => {
         safeLocalStorageSet('nafs_onboarding_v2_done', 'true');
-        // Save minimal info
+        appState.onboardingCompleted = true;
+        // Save to Firestore
         if (userId) {
-            saveUserField('onboardingCompleted', true).catch(() => {});
+            saveUserField('onboardingCompleted', true).catch(() => { });
         }
         _obRemoveContainer();
+        // Now show name modal if still needed
+        if (!appState.preferredName) {
+            setTimeout(() => {
+                if (!appState.preferredName) openModal('preferred-name-modal');
+            }, 500);
+        }
     };
 
     // ── Finish: save answers + go to AI ──
@@ -1551,6 +1558,13 @@ function showOnboarding() {
         const welcomeMsg = `أهلاً بك يا ${appState.preferredName || 'صديقي'}! 🌟\nبناءً على اختياراتك، سأساعدك في تحقيق هدفك في "${goalText}" بوقت ${timeText} يوميًا.\nاسألني أي شيء عن عباداتك وأنا هنا أساعدك! 🌿`;
 
         _obRemoveContainer();
+
+        // Show name modal if still needed
+        if (!appState.preferredName) {
+            setTimeout(() => {
+                if (!appState.preferredName) openModal('preferred-name-modal');
+            }, 500);
+        }
 
         // Redirect to AI screen and show welcome
         setTimeout(() => {
@@ -1743,7 +1757,8 @@ function renderMainApp() {
     showScreen('dashboard');
     checkAndResetDailyProgress();
     startDailyResetChecker();
-    if (!appState.preferredName) {
+    // Only show name modal if onboarding is already done (avoid overlap)
+    if (!appState.preferredName && appState.onboardingCompleted) {
         setTimeout(() => {
             if (!appState.preferredName) openModal('preferred-name-modal');
         }, 500);
@@ -7433,10 +7448,12 @@ authUnsubscribe = auth.onAuthStateChanged(async (user) => {
             if (typeof trackAppOpen === 'function') trackAppOpen();
             renderMainApp();
             loadMushafNightMode();
-            // Show onboarding for first-time users
-            if (!safeLocalStorageGet('nafs_onboarding_v2_done')) {
+            // Show onboarding for first-time users (use per-user flag, not localStorage)
+            if (!appState.onboardingCompleted) {
                 showOnboarding();
             } else {
+                // Sync localStorage for consistency
+                safeLocalStorageSet('nafs_onboarding_v2_done', 'true');
                 // Show what's new for returning users (once per version)
                 showWhatsNew();
             }
