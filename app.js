@@ -6763,6 +6763,8 @@ authUnsubscribe = auth.onAuthStateChanged(async (user) => {
         appInitialized = false;
         try {
             appState = await loadUserData(userId);
+            window.appState = appState;
+            window.appState.uid = userId;
             const cachedPrayer = safeLocalStorageGet('nafs_prayer_cache');
             if (cachedPrayer) {
                 const p = safeJsonParse(cachedPrayer);
