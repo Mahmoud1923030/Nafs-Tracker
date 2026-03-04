@@ -4094,6 +4094,7 @@ function startReminderChecker() {
 // =========================================================================
 //  حاسبة الزكاة
 // =========================================================================
+window.renderZakat = renderZakat;
 function renderZakat() {
     const _zState = window._zakatState || { tab: 'money', currency: 'EGP', goldEntries: [{ karat: 24, weight: 0 }], silverWeight: 0, cashAmount: 0, tradeGoods: 0, stockEntries: [{ name: '', count: 0, pricePerShare: 0 }], camels: 0, cows: 0, sheep: 0, cropType: '', cropWeight: 0, irrigationType: 'machine', pricePerKg: 0 };
     window._zakatState = _zState;
@@ -4283,11 +4284,11 @@ function renderZakat() {
         <div style="${sectionStyle}">
             <div style="${sectionTitleStyle}">نوع السقي</div>
             <div style="display:flex;gap:0.6rem">
-                <button onclick="window._zakatState.irrigationType='machine';renderZakat()"
+                <button onclick="window._zakatState.irrigationType='machine';window.renderZakat()"
                     style="flex:1;padding:0.7rem;border-radius:12px;font-family:inherit;font-size:0.9rem;cursor:pointer;transition:all 0.2s;${_zState.irrigationType === 'machine' ? activeTabStyle : inactiveTabStyle}">
                     <i class="fas fa-cog" style="margin-left:0.3rem"></i> سقي بآلة (5%)
                 </button>
-                <button onclick="window._zakatState.irrigationType='rain';renderZakat()"
+                <button onclick="window._zakatState.irrigationType='rain';window.renderZakat()"
                     style="flex:1;padding:0.7rem;border-radius:12px;font-family:inherit;font-size:0.9rem;cursor:pointer;transition:all 0.2s;${_zState.irrigationType === 'rain' ? activeTabStyle : inactiveTabStyle}">
                     <i class="fas fa-cloud-rain" style="margin-left:0.3rem"></i> سقي بدون آلة (10%)
                 </button>
@@ -4320,13 +4321,13 @@ function renderZakat() {
 
         <!-- Tabs -->
         <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
-            <button onclick="window._zakatState.tab='money';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'money' ? activeTabStyle : inactiveTabStyle}">
+            <button onclick="window._zakatState.tab='money';window.renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'money' ? activeTabStyle : inactiveTabStyle}">
                 <span style="font-size:1.1rem">💵</span> زكاة المال
             </button>
-            <button onclick="window._zakatState.tab='livestock';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'livestock' ? activeTabStyle : inactiveTabStyle}">
+            <button onclick="window._zakatState.tab='livestock';window.renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'livestock' ? activeTabStyle : inactiveTabStyle}">
                 <span style="font-size:1.1rem">🐄</span> زكاة الأنعام
             </button>
-            <button onclick="window._zakatState.tab='crops';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'crops' ? activeTabStyle : inactiveTabStyle}">
+            <button onclick="window._zakatState.tab='crops';window.renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'crops' ? activeTabStyle : inactiveTabStyle}">
                 <span style="font-size:1.1rem">🌾</span> زكاة الثمار
             </button>
         </div>
