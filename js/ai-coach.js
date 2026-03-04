@@ -42,7 +42,7 @@ async function askAICoach(userMessage) {
 
     const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
             userMessage,
             userData: {
