@@ -4347,6 +4347,7 @@ function renderZakat() {
         </div>
     </div>`;
 }
+window.renderZakat = renderZakat;
 
 // ── Zakat helper functions ──
 window._zakatAddGold = function () {
