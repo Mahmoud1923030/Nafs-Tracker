@@ -3,7 +3,7 @@
 //  Auto-update: skipWaiting immediately so new versions activate instantly.
 //  ➜ Bump VERSION below whenever static files change to trigger an update.
 // =========================================================================
-const VERSION = 21;
+const VERSION = 26;
 const CACHE_NAME = `nafs-tracker-v${VERSION}`;
 const CDN_CACHE = `nafs-cdn-v${VERSION}`;
 
@@ -46,7 +46,9 @@ const NETWORK_ONLY_HOSTS = [
     'cdn.islamic.network',
     'quranicaudio.com',
     'download.quranicaudio.com',
-    'api.sunnah.com'
+    'api.sunnah.com',
+    'api.emailjs.com',
+    'emailjs.com'
 ];
 
 // Hostnames that should be cache-first (CDN assets)
