@@ -186,6 +186,8 @@ function _aiAddMessage(role, content) {
 
     ctx.messages.scrollTop = ctx.messages.scrollHeight;
 }
+// Expose for onboarding welcome message
+window._aiAddMessage = _aiAddMessage;
 
 // ── Toggle popup ──
 window._aiTogglePopup = function () {

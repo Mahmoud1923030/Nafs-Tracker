@@ -1311,98 +1311,308 @@ function showWhatsNew() {
 }
 
 // =========================================================================
-//  Onboarding (3-screen intro for new users)
+//  Onboarding (interactive intro + personalization for new users)
 // =========================================================================
 function showOnboarding() {
-    const tourSteps = [
-        { icon: '🕌', title: 'مرحباً بك في Nafs Tracker', desc: 'تطبيقك الشامل لمتابعة عباداتك اليومية من أذكار وصلاة وقرآن والمزيد', screen: null },
-        { icon: '📿', title: 'أذكار الصباح والمساء', desc: 'أذكار مصنفة مع عداد تلقائي ونقاط لكل ذكر – قم بتحريك شريط التقدم لإكمال الورد', screen: 'adhkar' },
-        { icon: '🕐', title: 'مواقيت الصلاة', desc: 'مواقيت دقيقة حسب موقعك مع تنبيهات وتتبع للصلوات اليومية', screen: 'prayer' },
-        { icon: '📖', title: 'المصحف والقرآن', desc: 'قراءة المصحف والاستماع لأشهر القراء مع تتبع الصفحات والختمات', screen: 'quran' },
-        { icon: '🧿', title: 'السبحة الإلكترونية', desc: 'تسبيح إلكتروني مع أذكار متنوعة وإمكانية إضافة أذكار خاصة بك', screen: 'tasbih' },
-        { icon: '📜', title: 'حديث اليومي وأدعية', desc: 'حديث يومي متجدد وأدعية مصنفة لكل مناسبة من القرآن والسنة', screen: 'hadith' },
-        { icon: '🧭', title: 'القبلة وأسماء الله', desc: 'بوصلة القبلة الذكية و99 اسماً من أسماء الله الحسنى مع معانيها', screen: 'qibla' },
-        { icon: '🏆', title: 'الشارات والمكافآت', desc: 'اكسب النقاط والشارات، حافظ على سلسلة المواظبة، وتابع إحصائياتك', screen: 'rewards' },
-        { icon: '🚀', title: 'أنت جاهز!', desc: 'ابدأ رحلتك الآن وحافظ على عباداتك اليومية – بارك الله فيك', screen: null }
-    ];
-    let currentSlide = 0;
+    let currentStep = 0; // 0-2: slides, 3: goal question, 4: time question
+    let selectedGoal = '';
+    let selectedTime = '';
 
-    function renderSlide() {
-        const s = tourSteps[currentSlide];
-        const dots = tourSteps.map((_, i) =>
-            `<div style="width:${i === currentSlide ? '20px' : '6px'};height:6px;border-radius:3px;background:${i === currentSlide ? 'var(--accent-gold)' : i < currentSlide ? 'rgba(200,170,78,0.5)' : 'rgba(200,170,78,0.15)'};transition:all 0.3s"></div>`
+    const slides = [
+        {
+            icon: '📿',
+            title: 'ابنِ عادات إيمانية يومية',
+            desc: 'تابع أذكارك، صلواتك، وقراءتك للقرآن في مكان واحد.\nوحافظ على سلسلة انتظامك (Streak) اليومية.',
+            bg: 'radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.08), transparent 60%)'
+        },
+        {
+            icon: '📈',
+            title: 'شاهد تقدمك الحقيقي',
+            desc: 'احصل على نقاط، شارات، وإحصائيات دقيقة\nتعكس مستوى التزامك وتطورك الروحي.',
+            bg: 'radial-gradient(ellipse at 70% 80%, rgba(201,168,76,0.08), transparent 60%)'
+        },
+        {
+            icon: '🚀',
+            title: 'استعد لتبدأ رحلتك',
+            desc: 'أجب عن سؤالين بسيطين لنساعدك بشكل أفضل\nوسنخصص التجربة لك.',
+            bg: 'radial-gradient(ellipse at 50% 50%, rgba(201,168,76,0.1), transparent 60%)'
+        }
+    ];
+
+    const goalOptions = [
+        { id: 'adhkar', icon: '📿', label: 'الانتظام في الأذكار' },
+        { id: 'prayer', icon: '🕌', label: 'تحسين الصلاة' },
+        { id: 'quran', icon: '📖', label: 'قراءة القرآن' },
+        { id: 'balance', icon: '⚖️', label: 'التوازن في كل العبادات' }
+    ];
+
+    const timeOptions = [
+        { id: '5', icon: '⏱️', label: '٥ دقائق' },
+        { id: '10', icon: '🕐', label: '١٠ دقائق' },
+        { id: '20', icon: '🕑', label: '٢٠ دقيقة' },
+        { id: '30+', icon: '🕒', label: 'أكثر من ٢٠ دقيقة' }
+    ];
+
+    function renderStep() {
+        const totalSteps = 5;
+        const progress = Math.round((currentStep / (totalSteps - 1)) * 100);
+
+        // ── Dots ──
+        const dots = Array.from({ length: totalSteps }, (_, i) =>
+            `<div style="width:${i === currentStep ? '24px' : '8px'};height:8px;border-radius:4px;background:${i === currentStep ? '#c9a84c' : i < currentStep ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.12)'};transition:all 0.4s ease"></div>`
         ).join('');
 
-        const isFirst = currentSlide === 0;
-        const isLast = currentSlide === tourSteps.length - 1;
-        const progress = Math.round((currentSlide / (tourSteps.length - 1)) * 100);
+        // ── Slide content ──
+        if (currentStep < 3) {
+            const s = slides[currentStep];
+            return `
+            <div style="position:fixed;inset:0;z-index:200;background:linear-gradient(165deg,#0d2a1c,#081f16 40%,#071a12);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;overflow:hidden">
+                <div style="position:absolute;inset:0;${s.bg};pointer-events:none"></div>
+                <!-- Progress bar -->
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:rgba(201,168,76,0.08)">
+                    <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#c9a84c,#e8d48b);transition:width 0.5s ease;border-radius:0 2px 2px 0"></div>
+                </div>
+                <!-- Skip -->
+                <button onclick="window._obSkip()" style="position:absolute;top:1.2rem;left:1.2rem;color:rgba(242,234,216,0.35);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.82rem;cursor:pointer;padding:0.45rem 1rem;font-family:inherit;transition:all 0.2s" onmouseover="this.style.color='rgba(242,234,216,0.6)'" onmouseout="this.style.color='rgba(242,234,216,0.35)'">تخطي</button>
 
-        return `
-        <div style="position:fixed;inset:0;z-index:200;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;overflow:hidden">
-            <!-- Progress bar -->
-            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:rgba(200,170,78,0.1)">
-                <div style="height:100%;width:${progress}%;background:var(--accent-gold);transition:width 0.4s ease;border-radius:0 2px 2px 0"></div>
-            </div>
-            <!-- Step counter -->
-            <div style="position:absolute;top:1rem;left:1rem;color:var(--text-muted);font-size:0.85rem">${currentSlide + 1} / ${tourSteps.length}</div>
-            <!-- Skip button -->
-            ${!isLast ? `<button onclick="window._onboardingSkip()" style="position:absolute;top:1rem;right:1rem;color:var(--text-muted);background:none;border:none;font-size:0.9rem;cursor:pointer;padding:0.5rem">تخطي</button>` : ''}
-            
-            <div style="font-size:4.5rem;margin-bottom:1.5rem;animation:slideInUp 0.4s ease">${s.icon}</div>
-            <h2 style="font-size:1.6rem;font-weight:800;color:var(--accent-gold);margin-bottom:0.8rem;animation:slideInUp 0.4s ease 0.1s both">${s.title}</h2>
-            <p style="font-size:1rem;color:var(--text-secondary);max-width:320px;line-height:1.7;margin-bottom:2rem;animation:slideInUp 0.4s ease 0.15s both">${s.desc}</p>
-            <div style="display:flex;gap:4px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center">${dots}</div>
-            <div style="display:flex;gap:0.75rem;animation:slideInUp 0.4s ease 0.2s both">
-                ${!isFirst && !isLast ? `<button onclick="window._onboardingPrev()" style="padding:0.7rem 1.5rem;border-radius:1rem;background:transparent;border:1px solid rgba(200,170,78,0.25);color:var(--text-muted);font-size:0.95rem;cursor:pointer">→ السابق</button>` : ''}
-                ${isLast ? `
-                    <button onclick="window._onboardingSkip()" style="padding:0.8rem 2.5rem;border-radius:1rem;background:linear-gradient(135deg,rgba(200,170,78,0.25),rgba(200,170,78,0.1));border:1px solid var(--accent-gold);color:var(--accent-gold);font-size:1.1rem;font-weight:800;cursor:pointer;min-width:200px">🚀 ابدأ الآن</button>
-                ` : `
-                    <button onclick="window._onboardingNext()" style="padding:0.7rem 2rem;border-radius:1rem;background:linear-gradient(135deg,rgba(200,170,78,0.2),rgba(200,170,78,0.1));border:1px solid rgba(200,170,78,0.5);color:var(--accent-gold);font-size:0.95rem;font-weight:700;cursor:pointer">التالي ←</button>
-                `}
-            </div>
-        </div>`;
+                <!-- Icon with glow -->
+                <div style="position:relative;margin-bottom:2rem;animation:obSlideIn 0.5s ease">
+                    <div style="position:absolute;inset:-20px;background:radial-gradient(circle,rgba(201,168,76,0.15),transparent 70%);border-radius:50%"></div>
+                    <div style="font-size:5rem;position:relative;filter:drop-shadow(0 4px 20px rgba(201,168,76,0.2))">${s.icon}</div>
+                </div>
+
+                <h2 style="font-size:1.7rem;font-weight:800;color:#c9a84c;margin-bottom:0.8rem;animation:obSlideIn 0.5s ease 0.1s both;letter-spacing:-0.02em">${s.title}</h2>
+                <p style="font-size:1rem;color:rgba(242,234,216,0.55);max-width:340px;line-height:1.9;margin-bottom:2.5rem;animation:obSlideIn 0.5s ease 0.15s both;white-space:pre-line">${s.desc}</p>
+
+                <div style="display:flex;gap:6px;margin-bottom:2rem">${dots}</div>
+
+                <div style="display:flex;gap:0.8rem;animation:obSlideIn 0.5s ease 0.2s both">
+                    ${currentStep > 0 ? `<button onclick="window._obPrev()" style="padding:0.8rem 1.5rem;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);color:rgba(242,234,216,0.5);font-size:0.92rem;cursor:pointer;font-family:inherit;transition:all 0.2s">← السابق</button>` : ''}
+                    <button onclick="window._obNext()" style="padding:0.8rem 2.5rem;border-radius:14px;background:linear-gradient(135deg,rgba(201,168,76,0.22),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.45);color:#c9a84c;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;min-width:160px">${currentStep === 2 ? '🚀 أبدأ' : 'التالي →'}</button>
+                </div>
+            </div>`;
+        }
+
+        // ── Goal question (step 3) ──
+        if (currentStep === 3) {
+            const goalBtns = goalOptions.map(g => {
+                const isSelected = selectedGoal === g.id;
+                return `<button onclick="window._obSelectGoal('${g.id}')"
+                    style="display:flex;align-items:center;gap:0.9rem;width:100%;padding:1rem 1.2rem;border-radius:16px;cursor:pointer;font-family:inherit;font-size:1rem;text-align:right;transition:all 0.25s;
+                    background:${isSelected ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.06))' : 'rgba(255,255,255,0.02)'};
+                    border:${isSelected ? '2px solid rgba(201,168,76,0.5)' : '1.5px solid rgba(255,255,255,0.06)'};
+                    color:${isSelected ? '#c9a84c' : 'rgba(242,234,216,0.7)'};
+                    transform:${isSelected ? 'scale(1.02)' : 'scale(1)'};
+                    box-shadow:${isSelected ? '0 4px 20px rgba(201,168,76,0.1)' : 'none'}">
+                    <span style="font-size:1.5rem;flex-shrink:0">${g.icon}</span>
+                    <span style="font-weight:${isSelected ? '700' : '500'}">${g.label}</span>
+                    ${isSelected ? '<span style="margin-right:auto;font-size:1.1rem">✓</span>' : ''}
+                </button>`;
+            }).join('');
+
+            return `
+            <div style="position:fixed;inset:0;z-index:200;background:linear-gradient(165deg,#0d2a1c,#081f16 40%,#071a12);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;overflow:hidden">
+                <div style="position:absolute;inset:0;radial-gradient(ellipse at 50% 30%, rgba(201,168,76,0.06), transparent 60%);pointer-events:none"></div>
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:rgba(201,168,76,0.08)">
+                    <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#c9a84c,#e8d48b);transition:width 0.5s ease;border-radius:0 2px 2px 0"></div>
+                </div>
+                <button onclick="window._obSkip()" style="position:absolute;top:1.2rem;left:1.2rem;color:rgba(242,234,216,0.35);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.82rem;cursor:pointer;padding:0.45rem 1rem;font-family:inherit">تخطي</button>
+
+                <div style="font-size:2.8rem;margin-bottom:1rem;animation:obSlideIn 0.5s ease">🎯</div>
+                <h2 style="font-size:1.5rem;font-weight:800;color:#c9a84c;margin-bottom:0.5rem;animation:obSlideIn 0.5s ease 0.1s both">ما هدفك الأساسي؟</h2>
+                <p style="font-size:0.88rem;color:rgba(242,234,216,0.4);margin-bottom:1.8rem;animation:obSlideIn 0.5s ease 0.15s both">اختر العبادة التي تريد التركيز عليها</p>
+
+                <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;max-width:380px;animation:obSlideIn 0.5s ease 0.2s both">
+                    ${goalBtns}
+                </div>
+
+                <div style="display:flex;gap:6px;margin:2rem 0 1.5rem">${dots}</div>
+
+                <div style="display:flex;gap:0.8rem">
+                    <button onclick="window._obPrev()" style="padding:0.8rem 1.5rem;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);color:rgba(242,234,216,0.5);font-size:0.92rem;cursor:pointer;font-family:inherit">← السابق</button>
+                    <button onclick="window._obNext()" style="padding:0.8rem 2.5rem;border-radius:14px;background:${selectedGoal ? 'linear-gradient(135deg,rgba(201,168,76,0.22),rgba(201,168,76,0.08))' : 'rgba(255,255,255,0.03)'};border:1.5px solid ${selectedGoal ? 'rgba(201,168,76,0.45)' : 'rgba(255,255,255,0.08)'};color:${selectedGoal ? '#c9a84c' : 'rgba(242,234,216,0.3)'};font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;min-width:160px;transition:all 0.3s"${!selectedGoal ? ' disabled' : ''}>التالي →</button>
+                </div>
+            </div>`;
+        }
+
+        // ── Time question (step 4) ──
+        if (currentStep === 4) {
+            const timeBtns = timeOptions.map(t => {
+                const isSelected = selectedTime === t.id;
+                return `<button onclick="window._obSelectTime('${t.id}')"
+                    style="flex:1;min-width:140px;padding:1.2rem 0.8rem;border-radius:16px;cursor:pointer;font-family:inherit;font-size:0.95rem;text-align:center;transition:all 0.25s;display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+                    background:${isSelected ? 'linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.06))' : 'rgba(255,255,255,0.02)'};
+                    border:${isSelected ? '2px solid rgba(201,168,76,0.5)' : '1.5px solid rgba(255,255,255,0.06)'};
+                    color:${isSelected ? '#c9a84c' : 'rgba(242,234,216,0.7)'};
+                    transform:${isSelected ? 'scale(1.03)' : 'scale(1)'};
+                    box-shadow:${isSelected ? '0 4px 20px rgba(201,168,76,0.1)' : 'none'}">
+                    <span style="font-size:1.6rem">${t.icon}</span>
+                    <span style="font-weight:${isSelected ? '700' : '500'}">${t.label}</span>
+                </button>`;
+            }).join('');
+
+            return `
+            <div style="position:fixed;inset:0;z-index:200;background:linear-gradient(165deg,#0d2a1c,#081f16 40%,#071a12);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;overflow:hidden">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:rgba(201,168,76,0.08)">
+                    <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,#c9a84c,#e8d48b);transition:width 0.5s ease;border-radius:0 2px 2px 0"></div>
+                </div>
+                <button onclick="window._obSkip()" style="position:absolute;top:1.2rem;left:1.2rem;color:rgba(242,234,216,0.35);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.82rem;cursor:pointer;padding:0.45rem 1rem;font-family:inherit">تخطي</button>
+
+                <div style="font-size:2.8rem;margin-bottom:1rem;animation:obSlideIn 0.5s ease">⏰</div>
+                <h2 style="font-size:1.5rem;font-weight:800;color:#c9a84c;margin-bottom:0.5rem;animation:obSlideIn 0.5s ease 0.1s both">كم دقيقة يوميًا؟</h2>
+                <p style="font-size:0.88rem;color:rgba(242,234,216,0.4);margin-bottom:1.8rem;animation:obSlideIn 0.5s ease 0.15s both">حدد الوقت الذي تستطيع الالتزام به يوميًا</p>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;width:100%;max-width:380px;animation:obSlideIn 0.5s ease 0.2s both">
+                    ${timeBtns}
+                </div>
+
+                <div style="display:flex;gap:6px;margin:2rem 0 1.5rem">${dots}</div>
+
+                <div style="display:flex;gap:0.8rem">
+                    <button onclick="window._obPrev()" style="padding:0.8rem 1.5rem;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);color:rgba(242,234,216,0.5);font-size:0.92rem;cursor:pointer;font-family:inherit">← السابق</button>
+                    <button onclick="window._obFinish()" style="padding:0.8rem 2.5rem;border-radius:14px;background:${selectedTime ? 'linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.1))' : 'rgba(255,255,255,0.03)'};border:1.5px solid ${selectedTime ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.08)'};color:${selectedTime ? '#c9a84c' : 'rgba(242,234,216,0.3)'};font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;min-width:180px;transition:all 0.3s"${!selectedTime ? ' disabled' : ''}>🌟 ابدأ رحلتك</button>
+                </div>
+            </div>`;
+        }
+
+        return '';
     }
 
-    window._onboardingNext = () => {
-        if (currentSlide < tourSteps.length - 1) {
-            currentSlide++;
-            document.getElementById('onboarding-container').innerHTML = renderSlide();
+    // ── Navigation ──
+    window._obNext = () => {
+        if (currentStep < 4) {
+            if (currentStep === 3 && !selectedGoal) return;
+            currentStep++;
+            container.innerHTML = renderStep();
         }
     };
 
-    window._onboardingPrev = () => {
-        if (currentSlide > 0) {
-            currentSlide--;
-            document.getElementById('onboarding-container').innerHTML = renderSlide();
+    window._obPrev = () => {
+        if (currentStep > 0) {
+            currentStep--;
+            container.innerHTML = renderStep();
         }
     };
 
-    window._onboardingSkip = () => {
+    window._obSelectGoal = (id) => {
+        selectedGoal = id;
+        container.innerHTML = renderStep();
+    };
+
+    window._obSelectTime = (id) => {
+        selectedTime = id;
+        container.innerHTML = renderStep();
+    };
+
+    // ── Skip: go to AI directly ──
+    window._obSkip = () => {
         safeLocalStorageSet('nafs_onboarding_v2_done', 'true');
-        const container = document.getElementById('onboarding-container');
-        if (container) {
-            container.style.opacity = '0';
-            container.style.transition = 'opacity 0.3s ease';
-            setTimeout(() => container.remove(), 300);
+        // Save minimal info
+        if (userId) {
+            saveUserField('onboardingCompleted', true).catch(() => {});
         }
+        _obRemoveContainer();
     };
 
-    // Swipe support
+    // ── Finish: save answers + go to AI ──
+    window._obFinish = async () => {
+        if (!selectedTime) return;
+
+        safeLocalStorageSet('nafs_onboarding_v2_done', 'true');
+
+        const answers = {
+            goal: selectedGoal || 'balance',
+            dailyMinutes: selectedTime || '10',
+            completedAt: new Date().toISOString()
+        };
+
+        // Save to appState
+        appState.onboardingAnswers = answers;
+        appState.onboardingCompleted = true;
+
+        // Save to Firestore
+        if (userId) {
+            try {
+                await db.collection('users').doc(userId).set({
+                    onboardingAnswers: answers,
+                    onboardingCompleted: true
+                }, { merge: true });
+            } catch (e) {
+                console.warn('Failed to save onboarding answers:', e);
+            }
+        }
+
+        // Build welcome message for AI
+        const goalLabels = { adhkar: 'الانتظام في الأذكار', prayer: 'تحسين الصلاة', quran: 'قراءة القرآن', balance: 'التوازن في كل العبادات' };
+        const timeLabels = { '5': '٥ دقائق', '10': '١٠ دقائق', '20': '٢٠ دقيقة', '30+': 'أكثر من ٢٠ دقيقة' };
+        const goalText = goalLabels[answers.goal] || 'التوازن في العبادات';
+        const timeText = timeLabels[answers.dailyMinutes] || '١٠ دقائق';
+
+        const welcomeMsg = `أهلاً بك يا ${appState.preferredName || 'صديقي'}! 🌟\nبناءً على اختياراتك، سأساعدك في تحقيق هدفك في "${goalText}" بوقت ${timeText} يوميًا.\nاسألني أي شيء عن عباداتك وأنا هنا أساعدك! 🌿`;
+
+        _obRemoveContainer();
+
+        // Redirect to AI screen and show welcome
+        setTimeout(() => {
+            if (typeof window.showScreen === 'function') window.showScreen('ai');
+            // Inject welcome message into AI chat
+            setTimeout(() => {
+                if (typeof _aiAddMessage === 'function') {
+                    _aiAddMessage('assistant', welcomeMsg);
+                } else if (typeof window._aiAddMessage === 'function') {
+                    window._aiAddMessage('assistant', welcomeMsg);
+                } else {
+                    // Fallback: add directly to AI messages container
+                    const aiMsgs = document.getElementById('ai-messages');
+                    if (aiMsgs) {
+                        const empty = aiMsgs.querySelector('[data-empty]');
+                        if (empty) empty.remove();
+                        const div = document.createElement('div');
+                        div.style.cssText = 'max-width:85%;padding:0.75rem 1rem;border-radius:18px 18px 18px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);align-self:flex-start;color:rgba(242,234,216,0.9);font-size:0.95rem;line-height:1.7;white-space:pre-line';
+                        div.innerText = welcomeMsg;
+                        aiMsgs.appendChild(div);
+                    }
+                }
+            }, 500);
+        }, 400);
+    };
+
+    function _obRemoveContainer() {
+        const c = document.getElementById('onboarding-container');
+        if (c) {
+            c.style.opacity = '0';
+            c.style.transition = 'opacity 0.35s ease';
+            setTimeout(() => c.remove(), 350);
+        }
+    }
+
+    // ── Swipe support ──
     let touchStartX = 0;
     const handleTouchStart = (e) => { touchStartX = e.touches[0].clientX; };
     const handleTouchEnd = (e) => {
         const diff = touchStartX - e.changedTouches[0].clientX;
         if (Math.abs(diff) > 50) {
-            if (diff > 0 && currentSlide < tourSteps.length - 1) window._onboardingNext();
-            else if (diff < 0 && currentSlide > 0) window._onboardingPrev();
+            if (diff > 0) window._obNext();
+            else window._obPrev();
         }
     };
 
     const container = document.createElement('div');
     container.id = 'onboarding-container';
-    container.innerHTML = renderSlide();
+    container.innerHTML = renderStep();
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    // ── Inject animation keyframe ──
+    if (!document.getElementById('ob-anim-style')) {
+        const style = document.createElement('style');
+        style.id = 'ob-anim-style';
+        style.textContent = `
+            @keyframes obSlideIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        `;
+        document.head.appendChild(style);
+    }
+
     document.body.appendChild(container);
 }
 
