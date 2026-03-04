@@ -4095,70 +4095,504 @@ function startReminderChecker() {
 //  حاسبة الزكاة
 // =========================================================================
 function renderZakat() {
-    document.getElementById('screen-zakat').innerHTML = `
-    <div class="card p-5">
-        <div class="flex items-center gap-3 mb-5"><span class="text-3xl">💰</span><h2 class="text-2xl font-bold text-gold">حاسبة الزكاة</h2></div>
-        
-        <div class="bg-white/5 p-5 rounded-xl mb-5">
-            <h3 class="text-lg font-bold text-gold mb-4">حساب زكاة المال</h3>
-            
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block mb-2 text-sm">الذهب بالجرام</label>
-                    <input type="number" id="zakat-gold" min="0" step="0.1" placeholder="0" value="0">
-                </div>
-                <div>
-                    <label class="block mb-2 text-sm">الفضة بالجرام</label>
-                    <input type="number" id="zakat-silver" min="0" step="0.1" placeholder="0" value="0">
-                </div>
-                <div>
-                    <label class="block mb-2 text-sm">النقود (بالدولار أو سعر الذهب)</label>
-                    <input type="number" id="zakat-money" min="0" step="0.01" placeholder="0" value="0">
-                </div>
-                <div>
-                    <label class="block mb-2 text-sm">سعر الذهب (دولار/جرام)</label>
-                    <input type="number" id="gold-price" min="0" step="0.01" placeholder="70" value="70">
-                </div>
-            </div>
-            
-            <button onclick="calculateZakat()" class="w-full bg-gradient-islamic border border-gold text-gold font-bold py-3 rounded-xl transition mb-4">
-                <i class="fas fa-calculator me-1"></i>احسب الزكاة
-            </button>
-            
-            <div id="zakat-result" class="bg-gold-soft border border-gold/50 rounded-xl p-4 text-center hidden">
-                <p class="text-white/60 text-sm mb-2">الزكاة المستحقة</p>
-                <p class="text-4xl font-bold text-gold" id="zakat-amount">0</p>
-                <p class="text-white/50 text-sm mt-2">دولار</p>
-                <p class="text-white/40 text-xs mt-2">معدل الزكاة: 2.5%</p>
+    const _zState = window._zakatState || { tab: 'money', currency: 'EGP', goldEntries: [{ karat: 24, weight: 0 }], silverWeight: 0, cashAmount: 0, tradeGoods: 0, stockEntries: [{ name: '', count: 0, pricePerShare: 0 }], camels: 0, cows: 0, sheep: 0, cropType: '', cropWeight: 0, irrigationType: 'machine', pricePerKg: 0 };
+    window._zakatState = _zState;
+
+    const currencies = [
+        { code: 'EGP', name: 'جنيه مصري', symbol: 'ج.م' },
+        { code: 'SAR', name: 'ريال سعودي', symbol: 'ر.س' },
+        { code: 'AED', name: 'درهم إماراتي', symbol: 'د.إ' },
+        { code: 'KWD', name: 'دينار كويتي', symbol: 'د.ك' },
+        { code: 'USD', name: 'دولار أمريكي', symbol: '$' },
+        { code: 'EUR', name: 'يورو', symbol: '€' },
+        { code: 'GBP', name: 'جنيه إسترليني', symbol: '£' },
+    ];
+    const cur = currencies.find(c => c.code === _zState.currency) || currencies[0];
+
+    const activeTabStyle = 'background:linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.1));border:1.5px solid rgba(201,168,76,0.5);color:#c9a84c;font-weight:700';
+    const inactiveTabStyle = 'background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.08);color:rgba(242,234,216,0.5)';
+
+    const inputStyle = 'width:100%;padding:0.75rem 1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:rgba(242,234,216,0.9);font-family:inherit;font-size:0.95rem;outline:none;transition:border-color 0.2s;text-align:left;direction:ltr';
+    const labelStyle = 'display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(242,234,216,0.55);font-weight:600';
+    const sectionStyle = 'background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.08);border-radius:16px;padding:1.2rem;margin-bottom:1rem';
+    const sectionTitleStyle = 'display:flex;align-items:center;gap:0.5rem;color:#c9a84c;font-size:1rem;font-weight:700;margin-bottom:1rem';
+    const nisabBannerStyle = 'background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:0.8rem 1rem;text-align:center;color:#c9a84c;font-size:0.85rem;font-weight:600;margin-bottom:1rem';
+    const noteBannerStyle = 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:0.9rem 1rem;color:rgba(242,234,216,0.45);font-size:0.82rem;line-height:1.8;margin-bottom:1rem';
+    const addBtnStyle = 'display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.35);color:#c9a84c;font-size:1.1rem;cursor:pointer;transition:all 0.2s';
+    const removeBtnStyle = 'display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(239,68,68,0.1);border:1.5px solid rgba(239,68,68,0.25);color:#ef4444;font-size:1.1rem;cursor:pointer;transition:all 0.2s';
+
+    // ── Gold entries HTML ──
+    let goldEntriesHtml = _zState.goldEntries.map((entry, i) => `
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem">
+            <select onchange="window._zakatState.goldEntries[${i}].karat=+this.value" style="padding:0.6rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.15);border-radius:10px;color:rgba(242,234,216,0.8);font-family:inherit;font-size:0.9rem;min-width:75px;outline:none">
+                ${[24, 22, 21, 18, 14].map(k => `<option value="${k}" ${entry.karat === k ? 'selected' : ''} style="background:#0d2a1c">${k} عيار</option>`).join('')}
+            </select>
+            <input type="number" value="${entry.weight || ''}" min="0" step="0.1" placeholder="الوزن بالجرام"
+                onchange="window._zakatState.goldEntries[${i}].weight=+this.value"
+                style="${inputStyle};flex:1">
+            ${_zState.goldEntries.length > 1 ? `<button onclick="window._zakatRemoveGold(${i})" style="${removeBtnStyle}">−</button>` : ''}
+        </div>
+    `).join('');
+
+    // ── Stock entries HTML ──
+    let stockEntriesHtml = _zState.stockEntries.map((entry, i) => `
+        <div style="margin-bottom:0.8rem;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:12px;padding:0.8rem">
+            <input type="text" value="${escapeHtml(entry.name || '')}" placeholder="اسم السهم"
+                onchange="window._zakatState.stockEntries[${i}].name=this.value"
+                style="${inputStyle};margin-bottom:0.5rem;direction:rtl;text-align:right">
+            <div style="display:flex;gap:0.5rem;align-items:center">
+                <div style="flex:1"><label style="font-size:0.75rem;color:rgba(242,234,216,0.35)">عدد الأسهم</label>
+                    <input type="number" value="${entry.count || ''}" min="0" placeholder="0"
+                        onchange="window._zakatState.stockEntries[${i}].count=+this.value" style="${inputStyle}"></div>
+                <div style="flex:1"><label style="font-size:0.75rem;color:rgba(242,234,216,0.35)">سعر السهم</label>
+                    <input type="number" value="${entry.pricePerShare || ''}" min="0" step="0.01" placeholder="0"
+                        onchange="window._zakatState.stockEntries[${i}].pricePerShare=+this.value" style="${inputStyle}"></div>
+                ${_zState.stockEntries.length > 1 ? `<button onclick="window._zakatRemoveStock(${i})" style="${removeBtnStyle};margin-top:1rem">−</button>` : ''}
             </div>
         </div>
-        
-        <div class="bg-white/5 p-4 rounded-xl text-sm text-white/70 space-y-2">
-            <p><strong>📌 ملاحظات:</strong></p>
-            <p>• الزكاة على المال: 2.5% من المال النقي</p>
-            <p>• النصاب: 85 جرام ذهب أو 595 جرام فضة</p>
-            <p>• يتم دفع الزكاة بعد حول قمري كامل</p>
+    `).join('');
+
+    // ── Currency selector ──
+    const currencySelector = `
+        <div style="display:flex;align-items:center;gap:0.8rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.8rem 1rem;margin-bottom:1.2rem">
+            <span style="color:rgba(242,234,216,0.5);font-size:0.85rem;font-weight:600;white-space:nowrap">اختيار عملة حساب الزكاة</span>
+            <select id="zakat-currency" onchange="window._zakatState.currency=this.value" style="flex:1;padding:0.55rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.15);border-radius:10px;color:rgba(242,234,216,0.8);font-family:inherit;font-size:0.9rem;outline:none;cursor:pointer">
+                ${currencies.map(c => `<option value="${c.code}" ${_zState.currency === c.code ? 'selected' : ''} style="background:#0d2a1c">${c.name}</option>`).join('')}
+            </select>
+        </div>`;
+
+    // ──────────────────────────────────────────────
+    //  TAB: زكاة المال
+    // ──────────────────────────────────────────────
+    const moneyTab = `
+        ${currencySelector}
+
+        <!-- زكاة الأصول النقدية -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>💵</span> زكاة المال</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+                <div><label style="${labelStyle}">مبالغ مالية</label>
+                    <input type="number" id="z-cash" value="${_zState.cashAmount || ''}" min="0" step="0.01" placeholder="0"
+                        onchange="window._zakatState.cashAmount=+this.value" style="${inputStyle}"></div>
+                <div><label style="${labelStyle}">العملة</label>
+                    <div style="padding:0.75rem 1rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:#c9a84c;font-size:0.9rem">${cur.name}</div></div>
+            </div>
+        </div>
+
+        <!-- زكاة الذهب -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>🥇</span> زكاة الذهب</div>
+            <div style="${nisabBannerStyle}">قيمة نصاب الذهب: <strong>85 جرام</strong> من عيار 24 فأكثر</div>
+            ${goldEntriesHtml}
+            <button onclick="window._zakatAddGold()" style="${addBtnStyle};margin-top:0.3rem" title="إضافة عيار آخر">+</button>
+        </div>
+
+        <!-- زكاة الفضة -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>🥈</span> زكاة الفضة</div>
+            <div style="${nisabBannerStyle}">قيمة نصاب الفضة: <strong>595 جرام</strong> فأكثر</div>
+            <div><label style="${labelStyle}">الوزن بالجرام</label>
+                <input type="number" id="z-silver" value="${_zState.silverWeight || ''}" min="0" step="0.1" placeholder="0"
+                    onchange="window._zakatState.silverWeight=+this.value" style="${inputStyle}"></div>
+        </div>
+
+        <!-- زكاة التجارة -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>📦</span> زكاة التجارة</div>
+            <div style="${noteBannerStyle}">يختلف تقييم البضاعة المعروضة للبيع فقط، دون الأصول و لتجهيزات غير المعروضة</div>
+            <div><label style="${labelStyle}">قيمة البضاعة المتاجَر بها</label>
+                <input type="number" id="z-trade" value="${_zState.tradeGoods || ''}" min="0" step="0.01" placeholder="0"
+                    onchange="window._zakatState.tradeGoods=+this.value" style="${inputStyle}"></div>
+        </div>
+
+        <!-- زكاة الأسهم -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>📈</span> زكاة الأسهم</div>
+            <div style="${noteBannerStyle}">الأسهم التي تُمتلك في أسهم الشركات المضاربة التي تنوي بيعها خلال عامها بأسعارها الاستثمارية تزكى. و يجوب الشركات إخراج زكاتها</div>
+            ${stockEntriesHtml}
+            <button onclick="window._zakatAddStock()" style="${addBtnStyle};margin-top:0.3rem" title="إضافة سهم">+</button>
+        </div>
+
+        <!-- زر الحساب -->
+        <button onclick="window._zakatCalcMoney()" style="width:100%;padding:0.9rem;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;color:#c9a84c;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-bottom:1rem">
+            <i class="fas fa-calculator" style="margin-left:0.5rem"></i>احسب زكاة المال
+        </button>
+
+        <!-- النتيجة -->
+        <div id="zakat-money-result" style="display:none"></div>
+    `;
+
+    // ──────────────────────────────────────────────
+    //  TAB: زكاة الأنعام
+    // ──────────────────────────────────────────────
+    const livestockTab = `
+        ${currencySelector}
+
+        <div style="${nisabBannerStyle}">نصاب الإبل (5) رؤوس — نصاب البقر (30) رأسًا — نصاب الغنم (40) رأسًا</div>
+
+        <div style="${noteBannerStyle}">يُشترط لزكاة الأنعام أن تكون سائمة ترعى في المراعي الطبيعية دون كُلفة، و أن يحول عليها عام كامل بعد بلوغها النصاب، وأن لا تكون عاملة بحيث توفّر دخلاً لصاحبها، وإلا تعتبر من عروض التجارة.</div>
+
+        <!-- الإبل -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>🐫</span> عدد الإبل</div>
+            <input type="number" id="z-camels" value="${_zState.camels || ''}" min="0" placeholder="0"
+                onchange="window._zakatState.camels=+this.value" style="${inputStyle}">
+        </div>
+
+        <!-- البقر -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>🐄</span> عدد البقر</div>
+            <input type="number" id="z-cows" value="${_zState.cows || ''}" min="0" placeholder="0"
+                onchange="window._zakatState.cows=+this.value" style="${inputStyle}">
+        </div>
+
+        <!-- الغنم -->
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}"><span>🐑</span> عدد الأغنام</div>
+            <input type="number" id="z-sheep" value="${_zState.sheep || ''}" min="0" placeholder="0"
+                onchange="window._zakatState.sheep=+this.value" style="${inputStyle}">
+        </div>
+
+        <button onclick="window._zakatCalcLivestock()" style="width:100%;padding:0.9rem;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;color:#c9a84c;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-bottom:1rem">
+            <i class="fas fa-calculator" style="margin-left:0.5rem"></i>احسب زكاة الأنعام
+        </button>
+
+        <div id="zakat-livestock-result" style="display:none"></div>
+    `;
+
+    // ──────────────────────────────────────────────
+    //  TAB: زكاة الثمار
+    // ──────────────────────────────────────────────
+    const cropsTab = `
+        ${currencySelector}
+
+        <div style="${nisabBannerStyle}">نصاب زكاة الزروع و الثمار يبدأ من <strong>(615)</strong> كيلو جرام تقريبًا.</div>
+
+        <div style="${sectionStyle}">
+            <div><label style="${labelStyle}">نوع الزرع</label>
+                <input type="text" id="z-crop-type" value="${escapeHtml(_zState.cropType || '')}" placeholder="مثال: قمح، أرز، تمر..."
+                    onchange="window._zakatState.cropType=this.value" style="${inputStyle};direction:rtl;text-align:right"></div>
+        </div>
+
+        <div style="${sectionStyle}">
+            <div><label style="${labelStyle}">وزن الزرع (بالكيلو جرام)</label>
+                <input type="number" id="z-crop-weight" value="${_zState.cropWeight || ''}" min="0" step="0.1" placeholder="0"
+                    onchange="window._zakatState.cropWeight=+this.value" style="${inputStyle}"></div>
+        </div>
+
+        <div style="${sectionStyle}">
+            <div style="${sectionTitleStyle}">نوع السقي</div>
+            <div style="display:flex;gap:0.6rem">
+                <button onclick="window._zakatState.irrigationType='machine';renderZakat()"
+                    style="flex:1;padding:0.7rem;border-radius:12px;font-family:inherit;font-size:0.9rem;cursor:pointer;transition:all 0.2s;${_zState.irrigationType === 'machine' ? activeTabStyle : inactiveTabStyle}">
+                    <i class="fas fa-cog" style="margin-left:0.3rem"></i> سقي بآلة (5%)
+                </button>
+                <button onclick="window._zakatState.irrigationType='rain';renderZakat()"
+                    style="flex:1;padding:0.7rem;border-radius:12px;font-family:inherit;font-size:0.9rem;cursor:pointer;transition:all 0.2s;${_zState.irrigationType === 'rain' ? activeTabStyle : inactiveTabStyle}">
+                    <i class="fas fa-cloud-rain" style="margin-left:0.3rem"></i> سقي بدون آلة (10%)
+                </button>
+            </div>
+        </div>
+
+        <div style="${sectionStyle}">
+            <div><label style="${labelStyle}">سعر الكيلو</label>
+                <p style="font-size:0.75rem;color:rgba(242,234,216,0.3);margin-bottom:0.5rem">إذا كنت تودّ معرفة قيمة زكاتك ماديًا، فضلاً املأ الخانة التالية</p>
+                <input type="number" id="z-price-kg" value="${_zState.pricePerKg || ''}" min="0" step="0.01" placeholder="0"
+                    onchange="window._zakatState.pricePerKg=+this.value" style="${inputStyle}"></div>
+        </div>
+
+        <button onclick="window._zakatCalcCrops()" style="width:100%;padding:0.9rem;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;color:#c9a84c;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-bottom:1rem">
+            <i class="fas fa-calculator" style="margin-left:0.5rem"></i>احسب زكاة الثمار
+        </button>
+
+        <div id="zakat-crops-result" style="display:none"></div>
+    `;
+
+    // ── Render ──
+    const tabContent = _zState.tab === 'money' ? moneyTab : _zState.tab === 'livestock' ? livestockTab : cropsTab;
+
+    document.getElementById('screen-zakat').innerHTML = `
+    <div dir="rtl" style="max-width:560px;margin:0 auto;padding:0 0 4rem">
+        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1.5rem">
+            <span style="font-size:2rem">💰</span>
+            <h2 style="color:#c9a84c;font-size:1.6rem;font-weight:800;margin:0">حاسبة الزكاة</h2>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+            <button onclick="window._zakatState.tab='money';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'money' ? activeTabStyle : inactiveTabStyle}">
+                <span style="font-size:1.1rem">💵</span> زكاة المال
+            </button>
+            <button onclick="window._zakatState.tab='livestock';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'livestock' ? activeTabStyle : inactiveTabStyle}">
+                <span style="font-size:1.1rem">🐄</span> زكاة الأنعام
+            </button>
+            <button onclick="window._zakatState.tab='crops';renderZakat()" style="flex:1;min-width:100px;padding:0.7rem 0.5rem;border-radius:14px;font-family:inherit;font-size:0.88rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.4rem;${_zState.tab === 'crops' ? activeTabStyle : inactiveTabStyle}">
+                <span style="font-size:1.1rem">🌾</span> زكاة الثمار
+            </button>
+        </div>
+
+        ${tabContent}
+
+        <!-- مصادر -->
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:1rem;margin-top:1rem">
+            <p style="color:rgba(201,168,76,0.6);font-size:0.8rem;font-weight:700;margin:0 0 0.5rem"><i class="fas fa-book-open" style="margin-left:0.3rem"></i> المصادر الشرعية</p>
+            <div style="color:rgba(242,234,216,0.3);font-size:0.75rem;line-height:1.8">
+                <p style="margin:0">• نصاب الذهب: 85 جرام — حديث «ليس عليك شيء حتى يكون لك عشرون دينارًا» (أبو داود)</p>
+                <p style="margin:0">• نصاب الفضة: 595 جرام — حديث «وفي الرِّقة ربع العشر» (البخاري)</p>
+                <p style="margin:0">• زكاة الأنعام: كتاب أبي بكر الصديق رضي الله عنه في فرائض الصدقة (البخاري)</p>
+                <p style="margin:0">• زكاة الزروع: «فيما سقت السماء والعيون العُشر، وفيما سُقي بالنضح نصف العشر» (البخاري)</p>
+                <p style="margin:0">• النصاب: 5 أوسق ≈ 615 كجم — «ليس فيما دون خمسة أوسق صدقة» (البخاري ومسلم)</p>
+            </div>
         </div>
     </div>`;
 }
 
-window.calculateZakat = function () {
-    const gold = parseFloat(document.getElementById('zakat-gold').value) || 0;
-    const silver = parseFloat(document.getElementById('zakat-silver').value) || 0;
-    const money = parseFloat(document.getElementById('zakat-money').value) || 0;
-    const goldPrice = parseFloat(document.getElementById('gold-price').value) || 70;
-
-    const goldValue = gold * goldPrice;
-    const silverValue = silver * (goldPrice / 10); // Silver is roughly 1/10 the price
-    const totalValue = goldValue + silverValue + money;
-
-    const nussab = 85 * goldPrice; // 85 grams gold
-    const zakatAmount = totalValue >= nussab ? (totalValue * 0.025) : 0;
-
-    const resultDiv = document.getElementById('zakat-result');
-    document.getElementById('zakat-amount').innerText = zakatAmount.toFixed(2);
-    resultDiv.classList.remove('hidden');
+// ── Zakat helper functions ──
+window._zakatAddGold = function () {
+    window._zakatState.goldEntries.push({ karat: 24, weight: 0 });
+    renderZakat();
 };
+window._zakatRemoveGold = function (i) {
+    window._zakatState.goldEntries.splice(i, 1);
+    renderZakat();
+};
+window._zakatAddStock = function () {
+    window._zakatState.stockEntries.push({ name: '', count: 0, pricePerShare: 0 });
+    renderZakat();
+};
+window._zakatRemoveStock = function (i) {
+    window._zakatState.stockEntries.splice(i, 1);
+    renderZakat();
+};
+
+// ── Result Card Builder ──
+function _zakatResultCard(lines, total, symbol, note) {
+    const resultStyle = 'background:linear-gradient(165deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02));border:1.5px solid rgba(201,168,76,0.25);border-radius:16px;padding:1.2rem;animation:fadeIn 0.3s ease';
+    let html = `<div style="${resultStyle}">
+        <h3 style="color:#c9a84c;font-size:1rem;font-weight:700;text-align:center;margin:0 0 1rem">تفاصيل حساب الزكاة</h3>`;
+    lines.forEach(l => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+            <span style="color:rgba(242,234,216,0.6);font-size:0.85rem">${l.label}</span>
+            <span style="color:rgba(242,234,216,0.8);font-size:0.9rem;font-weight:600;direction:ltr">${l.value} ${symbol}</span>
+        </div>`;
+    });
+    html += `<div style="margin-top:1rem;padding:1rem;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:12px;text-align:center">
+        <p style="color:rgba(242,234,216,0.45);font-size:0.82rem;margin:0 0 0.3rem">إجمالي الزكاة المستحقة</p>
+        <p style="color:#c9a84c;font-size:2rem;font-weight:800;margin:0">${total} <span style="font-size:0.9rem">${symbol}</span></p>
+    </div>`;
+    if (note) html += `<p style="color:rgba(242,234,216,0.35);font-size:0.78rem;text-align:center;margin:0.8rem 0 0">${note}</p>`;
+    html += '</div>';
+    return html;
+}
+
+// ══════════════════════════════════════════
+//  حساب زكاة المال — 2.5%
+// ══════════════════════════════════════════
+window._zakatCalcMoney = function () {
+    const s = window._zakatState;
+    const cur = [
+        { code: 'EGP', symbol: 'ج.م' }, { code: 'SAR', symbol: 'ر.س' }, { code: 'AED', symbol: 'د.إ' },
+        { code: 'KWD', symbol: 'د.ك' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' }, { code: 'GBP', symbol: '£' },
+    ].find(c => c.code === s.currency) || { symbol: '' };
+
+    const cash = s.cashAmount || 0;
+
+    // Gold — convert each entry to pure-24k equivalent
+    let totalGoldGrams24k = 0;
+    s.goldEntries.forEach(e => {
+        const purity = e.karat / 24;
+        totalGoldGrams24k += (e.weight || 0) * purity;
+    });
+
+    const silver = s.silverWeight || 0;
+    const trade = s.tradeGoods || 0;
+
+    let stocksTotal = 0;
+    s.stockEntries.forEach(e => { stocksTotal += (e.count || 0) * (e.pricePerShare || 0); });
+
+    // ─ الزكاة = 2.5% من كل بند (لو وصل النصاب) ─
+    const lines = [];
+    let totalZakat = 0;
+
+    // Cash
+    if (cash > 0) {
+        const z = cash * 0.025;
+        totalZakat += z;
+        lines.push({ label: 'زكاة المال النقدي', value: z.toFixed(2) });
+    }
+
+    // Gold — nisab: 85g pure
+    if (totalGoldGrams24k >= 85) {
+        // We can't know the money value without gold price — just report grams
+        const zakatGrams = totalGoldGrams24k * 0.025;
+        lines.push({ label: `زكاة الذهب (${totalGoldGrams24k.toFixed(1)} جرام عيار 24)`, value: zakatGrams.toFixed(2) + ' جرام' });
+    } else if (totalGoldGrams24k > 0) {
+        lines.push({ label: 'الذهب', value: 'لم يبلغ النصاب (85 جرام)' });
+    }
+
+    // Silver — nisab: 595g
+    if (silver >= 595) {
+        const zakatSilver = silver * 0.025;
+        lines.push({ label: `زكاة الفضة (${silver} جرام)`, value: zakatSilver.toFixed(2) + ' جرام' });
+    } else if (silver > 0) {
+        lines.push({ label: 'الفضة', value: 'لم تبلغ النصاب (595 جرام)' });
+    }
+
+    // Trade
+    if (trade > 0) {
+        const z = trade * 0.025;
+        totalZakat += z;
+        lines.push({ label: 'زكاة التجارة', value: z.toFixed(2) });
+    }
+
+    // Stocks
+    if (stocksTotal > 0) {
+        const z = stocksTotal * 0.025;
+        totalZakat += z;
+        lines.push({ label: `زكاة الأسهم (${stocksTotal.toFixed(2)})`, value: z.toFixed(2) });
+    }
+
+    if (lines.length === 0) {
+        showToast('أدخل بيانات الزكاة أولاً', 'warning');
+        return;
+    }
+
+    const el = document.getElementById('zakat-money-result');
+    if (el) {
+        el.style.display = 'block';
+        el.innerHTML = _zakatResultCard(lines, totalZakat.toFixed(2), cur.symbol, 'معدل الزكاة: 2.5% — بعد حول قمري كامل');
+    }
+};
+
+// ══════════════════════════════════════════
+//  حساب زكاة الأنعام
+//  المصدر: كتاب أبي بكر الصديق في الصدقات (البخاري)
+// ══════════════════════════════════════════
+window._zakatCalcLivestock = function () {
+    const s = window._zakatState;
+    const lines = [];
+
+    // ── الإبل ──
+    const camels = s.camels || 0;
+    if (camels >= 5) {
+        let zakatCamels = '';
+        if (camels <= 9) zakatCamels = 'شاة واحدة';
+        else if (camels <= 14) zakatCamels = 'شاتان';
+        else if (camels <= 19) zakatCamels = '3 شياه';
+        else if (camels <= 24) zakatCamels = '4 شياه';
+        else if (camels <= 35) zakatCamels = 'بنت مخاض (أنثى أتمت سنة)';
+        else if (camels <= 45) zakatCamels = 'بنت لبون (أنثى أتمت سنتين)';
+        else if (camels <= 60) zakatCamels = 'حِقّة (أنثى أتمت 3 سنوات)';
+        else if (camels <= 75) zakatCamels = 'جَذَعة (أنثى أتمت 4 سنوات)';
+        else if (camels <= 90) zakatCamels = 'بنتا لبون';
+        else if (camels <= 120) zakatCamels = 'حِقّتان';
+        else {
+            // فوق 120: في كل 40 بنت لبون، في كل 50 حقة
+            const hiqqa = Math.floor(camels / 50);
+            const remaining = camels % 50;
+            const bintLaboun = Math.floor(remaining / 40);
+            zakatCamels = '';
+            if (hiqqa > 0) zakatCamels += `${hiqqa} حِقّة`;
+            if (bintLaboun > 0) zakatCamels += `${zakatCamels ? ' و ' : ''}${bintLaboun} بنت لبون`;
+            if (!zakatCamels) zakatCamels = `${hiqqa} حِقّة`;
+        }
+        lines.push({ label: `الإبل (${camels} رأس)`, value: zakatCamels });
+    } else if (camels > 0) {
+        lines.push({ label: `الإبل (${camels})`, value: 'لم تبلغ النصاب (5 رؤوس)' });
+    }
+
+    // ── البقر ──
+    const cows = s.cows || 0;
+    if (cows >= 30) {
+        let zakatCows = '';
+        // في كل 30 تبيع/تبيعة، في كل 40 مسنة
+        const musinna = Math.floor(cows / 40);
+        const remaining = cows - (musinna * 40);
+        const tabi = Math.floor(remaining / 30);
+        if (musinna > 0 && tabi > 0) {
+            zakatCows = `${musinna} مُسنّة و ${tabi} تبيع/تبيعة`;
+        } else if (musinna > 0) {
+            zakatCows = `${musinna} مُسنّة (أتمت سنتين)`;
+        } else {
+            zakatCows = `${tabi} تبيع/تبيعة (أتم سنة)`;
+        }
+        lines.push({ label: `البقر (${cows} رأس)`, value: zakatCows });
+    } else if (cows > 0) {
+        lines.push({ label: `البقر (${cows})`, value: 'لم تبلغ النصاب (30 رأسًا)' });
+    }
+
+    // ── الغنم ──
+    const sheep = s.sheep || 0;
+    if (sheep >= 40) {
+        let zakatSheep = '';
+        if (sheep <= 120) zakatSheep = 'شاة واحدة';
+        else if (sheep <= 200) zakatSheep = 'شاتان';
+        else if (sheep <= 399) zakatSheep = '3 شياه';
+        else zakatSheep = `${Math.floor(sheep / 100)} شياه (واحدة في كل 100)`;
+        lines.push({ label: `الغنم (${sheep} رأس)`, value: zakatSheep });
+    } else if (sheep > 0) {
+        lines.push({ label: `الغنم (${sheep})`, value: 'لم تبلغ النصاب (40 رأسًا)' });
+    }
+
+    if (lines.length === 0) {
+        showToast('أدخل أعداد الأنعام أولاً', 'warning');
+        return;
+    }
+
+    const el = document.getElementById('zakat-livestock-result');
+    if (el) {
+        el.style.display = 'block';
+        el.innerHTML = _zakatResultCard(lines, '—', '', 'يُشترط أن تكون سائمة (ترعى حولاً كاملاً) وبلغت النصاب');
+    }
+};
+
+// ══════════════════════════════════════════
+//  حساب زكاة الزروع والثمار
+//  المصدر: «فيما سقت السماء العُشر…» (البخاري)
+// ══════════════════════════════════════════
+window._zakatCalcCrops = function () {
+    const s = window._zakatState;
+    const cur = [
+        { code: 'EGP', symbol: 'ج.م' }, { code: 'SAR', symbol: 'ر.س' }, { code: 'AED', symbol: 'د.إ' },
+        { code: 'KWD', symbol: 'د.ك' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' }, { code: 'GBP', symbol: '£' },
+    ].find(c => c.code === s.currency) || { symbol: '' };
+
+    const weight = s.cropWeight || 0;
+    const pricePerKg = s.pricePerKg || 0;
+    const rate = s.irrigationType === 'rain' ? 0.10 : 0.05;
+    const rateLabel = s.irrigationType === 'rain' ? 'العُشر (10%)' : 'نصف العُشر (5%)';
+    const lines = [];
+
+    if (weight < 615) {
+        if (weight > 0) lines.push({ label: `الوزن (${weight} كجم)`, value: 'لم يبلغ النصاب (615 كجم)' });
+        if (lines.length === 0) { showToast('أدخل وزن المحصول أولاً', 'warning'); return; }
+        const el = document.getElementById('zakat-crops-result');
+        if (el) { el.style.display = 'block'; el.innerHTML = _zakatResultCard(lines, '0', '', 'نصاب الزروع: 5 أوسق ≈ 615 كجم'); }
+        return;
+    }
+
+    const zakatWeight = weight * rate;
+    if (s.cropType) lines.push({ label: 'نوع الزرع', value: s.cropType });
+    lines.push({ label: 'الوزن الكلي', value: weight.toFixed(1) + ' كجم' });
+    lines.push({ label: 'نسبة الزكاة', value: rateLabel });
+    lines.push({ label: 'زكاة المحصول (بالوزن)', value: zakatWeight.toFixed(1) + ' كجم' });
+
+    let totalMoney = '';
+    if (pricePerKg > 0) {
+        const moneyValue = zakatWeight * pricePerKg;
+        lines.push({ label: 'القيمة المالية للزكاة', value: moneyValue.toFixed(2) + ' ' + cur.symbol });
+        totalMoney = moneyValue.toFixed(2);
+    }
+
+    const el = document.getElementById('zakat-crops-result');
+    if (el) {
+        el.style.display = 'block';
+        el.innerHTML = _zakatResultCard(lines, totalMoney || zakatWeight.toFixed(1) + ' كجم', totalMoney ? cur.symbol : '', `طريقة السقي: ${s.irrigationType === 'rain' ? 'سماء / عيون — العُشر' : 'بآلة — نصف العُشر'}`);
+    }
+};
+
+// Keep old function name for backward compatibility
+window.calculateZakat = function () { window._zakatCalcMoney(); };
 
 // =========================================================================
 //  أوقات الأذان

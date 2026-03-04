@@ -3,7 +3,7 @@
 //  Auto-update: skipWaiting immediately so new versions activate instantly.
 //  ➜ Bump VERSION below whenever static files change to trigger an update.
 // =========================================================================
-const VERSION = 28;
+const VERSION = 29;
 const CACHE_NAME = `nafs-tracker-v${VERSION}`;
 const CDN_CACHE = `nafs-cdn-v${VERSION}`;
 
