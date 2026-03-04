@@ -1492,6 +1492,9 @@ function renderMainApp() {
         // AI usage tracking
         if (typeof trackScreenVisit === 'function') trackScreenVisit(screenId);
 
+        // Update AI FAB visibility
+        if (typeof window._aiUpdateFab === 'function') window._aiUpdateFab(screenId);
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         destroyCharts();
@@ -6491,6 +6494,9 @@ function renderAI() {
         </div>
 
     </div>`;
+
+    // Sync chat history from popup to full screen
+    if (typeof window._aiOnScreenOpen === 'function') window._aiOnScreenOpen();
 }
 
 function renderFeedback() {

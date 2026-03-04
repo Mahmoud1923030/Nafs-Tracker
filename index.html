@@ -593,6 +593,142 @@
         </button>
     </div>
 
+    <!-- AI Floating Button -->
+    <button id="ai-fab" onclick="window._aiTogglePopup()" aria-label="نفس AI"
+        style="position:fixed;bottom:90px;left:20px;z-index:9998;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#a8893a);border:2px solid rgba(201,168,76,0.5);color:#081f16;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(201,168,76,0.35),0 2px 8px rgba(0,0,0,0.4);transition:all 0.3s ease;animation:aiFabPulse 3s infinite">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- AI Chat Popup -->
+    <div id="ai-popup"
+        style="display:none;position:fixed;bottom:160px;left:20px;z-index:9999;width:370px;max-width:calc(100vw - 40px);height:520px;max-height:calc(100vh - 200px);background:linear-gradient(165deg,#0d2a1c,#081f16 40%,#071a12);border:1px solid rgba(201,168,76,0.2);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,0.6),0 0 30px rgba(201,168,76,0.08);flex-direction:column;overflow:hidden"
+        dir="rtl">
+        <!-- Popup Header -->
+        <div
+            style="display:flex;align-items:center;gap:0.7rem;padding:0.85rem 1rem;border-bottom:1px solid rgba(201,168,76,0.12);background:rgba(201,168,76,0.04);flex-shrink:0">
+            <div
+                style="width:36px;height:36px;flex-shrink:0;background:radial-gradient(circle,rgba(201,168,76,0.2),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
+                🤖</div>
+            <div style="flex:1">
+                <h3 style="color:#c9a84c;font-size:0.95rem;font-weight:700;margin:0">نفس AI</h3>
+                <p style="color:rgba(242,234,216,0.3);font-size:0.7rem;margin:0">مساعدك الشخصي</p>
+            </div>
+            <button onclick="window._aiTogglePopup()"
+                style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(242,234,216,0.5);font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s"
+                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.05)'">✕</button>
+        </div>
+        <!-- Quick Questions -->
+        <div
+            style="display:flex;gap:0.35rem;flex-wrap:wrap;padding:0.6rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0">
+            <button onclick="window._aiQuickAsk('كيف أداؤي النهارده؟')"
+                style="padding:0.3rem 0.65rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:16px;color:rgba(201,168,76,0.7);font-size:0.72rem;cursor:pointer;font-family:inherit">📊
+                أداؤي</button>
+            <button onclick="window._aiQuickAsk('محتاج تشجيع')"
+                style="padding:0.3rem 0.65rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:16px;color:rgba(201,168,76,0.7);font-size:0.72rem;cursor:pointer;font-family:inherit">💪
+                تشجيع</button>
+            <button onclick="window._aiQuickAsk('نصيحة لتحسين ذكري')"
+                style="padding:0.3rem 0.65rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:16px;color:rgba(201,168,76,0.7);font-size:0.72rem;cursor:pointer;font-family:inherit">🌙
+                نصيحة</button>
+            <button onclick="window._aiQuickAsk('حلل عاداتي')"
+                style="padding:0.3rem 0.65rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:16px;color:rgba(201,168,76,0.7);font-size:0.72rem;cursor:pointer;font-family:inherit">📈
+                تحليل</button>
+        </div>
+        <!-- Messages -->
+        <div id="ai-popup-messages"
+            style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0.55rem;padding:0.7rem;scroll-behavior:smooth">
+            <div data-empty style="text-align:center;padding:2rem 0.8rem;color:rgba(242,234,216,0.25)">
+                <div style="font-size:1.8rem;margin-bottom:0.4rem">🌙</div>
+                <p style="margin:0;font-size:0.82rem">اسألني أي حاجة عن عباداتك</p>
+            </div>
+            <div id="ai-popup-typing" class="hidden"
+                style="align-self:flex-start;padding:0.55rem 0.85rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px 16px 16px 4px;color:rgba(242,234,216,0.4);font-size:0.82rem">
+                نفس بيفكر...</div>
+        </div>
+        <!-- Input -->
+        <div
+            style="display:flex;gap:0.4rem;align-items:center;padding:0.7rem;border-top:1px solid rgba(201,168,76,0.1);flex-shrink:0">
+            <input id="ai-popup-input" type="text" placeholder="اسأل نفس..."
+                onkeydown="if(event.key==='Enter') window._aiSend()"
+                style="flex:1;padding:0.7rem 0.85rem;background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.18);border-radius:12px;color:rgba(242,234,216,0.9);font-family:inherit;font-size:0.88rem;outline:none;transition:border-color 0.2s"
+                onfocus="this.style.borderColor='rgba(201,168,76,0.45)'"
+                onblur="this.style.borderColor='rgba(201,168,76,0.18)'">
+            <button onclick="window._aiSend()"
+                style="width:40px;height:40px;flex-shrink:0;background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.08));border:1.5px solid rgba(201,168,76,0.35);border-radius:12px;color:#c9a84c;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s">➤</button>
+        </div>
+    </div>
+
+    <!-- AI FAB Styles -->
+    <style>
+        @keyframes aiFabPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 20px rgba(201, 168, 76, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 4px 25px rgba(201, 168, 76, 0.5), 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 15px rgba(201, 168, 76, 0.15);
+            }
+        }
+
+        #ai-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 28px rgba(201, 168, 76, 0.5), 0 2px 10px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        #ai-fab:active {
+            transform: scale(0.95);
+        }
+
+        #ai-fab.ai-fab-hidden {
+            display: none !important;
+        }
+
+        #ai-popup {
+            animation: aiPopupIn 0.25s ease-out;
+        }
+
+        @keyframes aiPopupIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        #ai-popup-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #ai-popup-messages::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.15);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 480px) {
+            #ai-popup {
+                left: 10px !important;
+                right: 10px !important;
+                width: auto !important;
+                bottom: 150px !important;
+                height: 450px !important;
+            }
+
+            #ai-fab {
+                bottom: 80px !important;
+                left: 16px !important;
+                width: 50px !important;
+                height: 50px !important;
+                font-size: 1.3rem !important;
+            }
+        }
+    </style>
+
     <!-- EmailJS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
