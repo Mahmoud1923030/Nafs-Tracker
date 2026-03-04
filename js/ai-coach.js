@@ -44,14 +44,30 @@ window.trackEmergencyUse = function () {
     } catch (e) { }
 };
 
+// ── انتظار تحميل بيانات المستخدم ──
+function waitForAppState(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+        if (window.appState?.uid) return resolve(window.appState);
+
+        const interval = setInterval(() => {
+            if (window.appState?.uid) {
+                clearInterval(interval);
+                clearTimeout(timeout);
+                resolve(window.appState);
+            }
+        }, 200);
+
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+            reject(new Error('انتهت مهلة تحميل البيانات — حاول تسجيل الدخول مجدداً'));
+        }, timeoutMs);
+    });
+}
+
 // ── كلام الـ Worker ──
 async function askAICoach(userMessage) {
     const usageStats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
-    const state = window.appState || {};
-
-    if (!state.uid) {
-        throw new Error('NOT_LOADED');
-    }
+    const state = await waitForAppState();
 
     const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
@@ -138,18 +154,14 @@ window._aiSend = async function () {
 
         let errorMsg = 'حدث خطأ غير متوقع، حاول مرة أخرى';
         const errText = err?.message || '';
-        if (errText === 'NOT_LOADED') {
-            errorMsg = 'جاري تحميل بياناتك، انتظر لحظة... ⏳';
-        } else if (err.name === 'TypeError' && (errText.includes('fetch') || errText.includes('Failed'))) {
-            errorMsg = 'تعذّر الاتصال بالخادم — تحقق من اتصالك بالإنترنت 🌐';
-        } else if (errText.includes('CORS') || errText.includes('cross-origin')) {
-            errorMsg = 'مشكلة CORS — يُنصح بفتح التطبيق من nafs-tracker-live.vercel.app ❌';
-        } else if (err.name === 'AbortError') {
-            errorMsg = 'انتهت مهلة الطلب — الخادم لا يستجيب ⏱️';
-        } else if (errText.includes('NetworkError')) {
-            errorMsg = 'تعذّر الاتصال بالخادم — تحقق من اتصالك بالإنترنت 🌐';
+        if (errText.includes('انتهت مهلة')) {
+            errorMsg = errText;
+        } else if (errText.includes('403') || errText.includes('Forbidden')) {
+            errorMsg = 'خطأ في الصلاحيات — تحقق من إعدادات الـ Worker';
+        } else if (errText.includes('fetch') || err.name === 'TypeError') {
+            errorMsg = 'تعذّر الاتصال بالخادم — تحقق من اتصالك بالإنترنت';
         } else if (errText.startsWith('HTTP')) {
-            errorMsg = `خطأ من الخادم (${errText}) — جرب تاني ❌`;
+            errorMsg = `خطأ من الخادم: ${errText}`;
         }
         _aiAddMessage('assistant', errorMsg);
     } finally {

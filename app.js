@@ -28,9 +28,9 @@ window.addEventListener('unhandledrejection', function (e) {
     }
 });
 
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-    if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-        console.warn('Firestore persistence error:', err);
+db.settings({
+    cache: {
+        kind: 'persistentMultipleTab'
     }
 });
 
