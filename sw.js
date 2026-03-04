@@ -3,7 +3,7 @@
 //  Auto-update: skipWaiting immediately so new versions activate instantly.
 //  ➜ Bump VERSION below whenever static files change to trigger an update.
 // =========================================================================
-const VERSION = 26;
+const VERSION = 27;
 const CACHE_NAME = `nafs-tracker-v${VERSION}`;
 const CDN_CACHE = `nafs-cdn-v${VERSION}`;
 
@@ -108,6 +108,16 @@ self.addEventListener('fetch', event => {
 
     // Skip non-http schemes
     if (!url.protocol.startsWith('http')) return;
+
+    // Navigation requests (HTML pages) → always network-first, never serve stale
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() =>
+                caches.match('/index.html').then(c => c || offlineFallback())
+            )
+        );
+        return;
+    }
 
     // fonts.gstatic.com → cache-first (check BEFORE general gstatic.com)
     if (url.hostname === 'fonts.gstatic.com') {
