@@ -1,6 +1,7 @@
+// ⚠️ NEVER COMMIT THIS FILE — contains secret keys
 // =========================================================================
 //  Firebase Configuration — Keep this file out of version control
-//  if you want the keys private (add to .gitignore).
+//  Copy js/firebase-config.example.js → js/firebase-config.js and fill in values
 // =========================================================================
 export const firebaseConfig = {
     apiKey: "AIzaSyD-Ngg9Mh6hhwmlQDruIbGYUyh0_zLpJDc",

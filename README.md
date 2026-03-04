@@ -25,6 +25,12 @@
 - Service Worker (PWA + Offline)
 - Web Audio API
 
+## ⚙️ Setup
+
+1. Copy `js/firebase-config.example.js` → `js/firebase-config.js`
+2. Fill in your Firebase project credentials
+3. **Never** commit `firebase-config.js` — it's in `.gitignore`
+
 ## 🚀 التشغيل المحلي
 
 ```bash

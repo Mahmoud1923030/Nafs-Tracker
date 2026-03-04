@@ -18,6 +18,13 @@ window.trackAppOpen = function () {
     } catch (e) { }
 };
 
+// استدعاء تلقائي عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.trackAppOpen === 'function') {
+        window.trackAppOpen();
+    }
+});
+
 window.trackScreenVisit = function (screenId) {
     try {
         const stats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
@@ -42,9 +49,13 @@ async function askAICoach(userMessage) {
     const usageStats = JSON.parse(localStorage.getItem(AI_USAGE_KEY) || '{}');
     const state = window.appState || {};
 
+    if (!state.uid) {
+        throw new Error('NOT_LOADED');
+    }
+
     const response = await fetch(AI_WORKER_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             userMessage,
             userData: {
@@ -124,12 +135,23 @@ window._aiSend = async function () {
     } catch (err) {
         console.error('[AI Coach]', err);
         if (typing) typing.classList.add('hidden');
-        const errMsg = err?.message || '';
-        if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
-            _aiAddMessage('assistant', 'مشكلة CORS أو اتصال — لازم تفتح التطبيق من nafs-tracker-live.vercel.app ❌');
-        } else {
-            _aiAddMessage('assistant', `خطأ: ${errMsg || 'في مشكلة في الاتصال — جرب تاني'} ❌`);
+
+        let errorMsg = 'حدث خطأ غير متوقع، حاول مرة أخرى';
+        const errText = err?.message || '';
+        if (errText === 'NOT_LOADED') {
+            errorMsg = 'جاري تحميل بياناتك، انتظر لحظة... ⏳';
+        } else if (err.name === 'TypeError' && (errText.includes('fetch') || errText.includes('Failed'))) {
+            errorMsg = 'تعذّر الاتصال بالخادم — تحقق من اتصالك بالإنترنت 🌐';
+        } else if (errText.includes('CORS') || errText.includes('cross-origin')) {
+            errorMsg = 'مشكلة CORS — يُنصح بفتح التطبيق من nafs-tracker-live.vercel.app ❌';
+        } else if (err.name === 'AbortError') {
+            errorMsg = 'انتهت مهلة الطلب — الخادم لا يستجيب ⏱️';
+        } else if (errText.includes('NetworkError')) {
+            errorMsg = 'تعذّر الاتصال بالخادم — تحقق من اتصالك بالإنترنت 🌐';
+        } else if (errText.startsWith('HTTP')) {
+            errorMsg = `خطأ من الخادم (${errText}) — جرب تاني ❌`;
         }
+        _aiAddMessage('assistant', errorMsg);
     } finally {
         // إعادة تفعيل الإدخال
         if (input) input.disabled = false;

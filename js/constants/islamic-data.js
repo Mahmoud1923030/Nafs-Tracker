@@ -14,7 +14,6 @@ export const COUNTRIES = [
     { name: 'الرياض (السعودية)', lat: 24.7136, lng: 46.6753, method: 4 },
     { name: 'دبي (الإمارات)', lat: 25.2048, lng: 55.2708, method: 4 },
     { name: 'جدة (السعودية)', lat: 21.5433, lng: 39.1727, method: 4 },
-    { name: 'القاهرة (مصر)', lat: 30.0444, lng: 31.2357, method: 5 },
     { name: 'فلسطين', lat: 31.9454, lng: 35.2008, method: 5 },
     { name: 'ليبيا', lat: 32.8872, lng: 13.1913, method: 5 },
     { name: 'تونس', lat: 36.8065, lng: 10.1686, method: 5 },

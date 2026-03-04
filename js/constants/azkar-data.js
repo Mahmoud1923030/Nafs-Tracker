@@ -388,7 +388,8 @@ export const DEFAULT_EVENING_AZKAR = [
         surah: '',
         virtue: 'دعاء طلب العلم النافع والرزق الحسن — يُقال بعد صلاة الفجر خاصة.',
         count: 1,
-        category: 'morning',
+        category: 'afterprayer',
+        notes: 'يُقال بعد صلاة الفجر',
         points: 6,
         reference: 'رواه ابن ماجه (925) — حديث أم سلمة: كان النبي ﷺ يقول بعد صلاة الفجر'
     },
@@ -629,13 +630,33 @@ export const DEFAULT_NIGHT_AZKAR = [
         reference: 'متفق عليه: رواه البخاري (6311) ومسلم (2710)'
     },
     {
-        id: 'n14',
-        text: 'سبحان الله (٣٣) والحمد لله (٣٣) والله اكبر (٣٤)',
+        id: 'n14a',
+        text: 'سبحان الله',
         surah: '',
-        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم، وهو خير لكما من خادم. (مجموع التسبيحات ١٠٠: ٣٣+٣٣+٣٤)',
-        count: 1, // مجموعة واحدة (33 تسبيح + 33 تحميد + 34 تكبير = 100)
+        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم — التسبيح',
+        count: 33,
         category: 'night',
-        points: 10,
+        points: 4,
+        reference: 'متفق عليه: رواه البخاري (5362) ومسلم (2727)'
+    },
+    {
+        id: 'n14b',
+        text: 'الحمد لله',
+        surah: '',
+        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم — التحميد',
+        count: 33,
+        category: 'night',
+        points: 3,
+        reference: 'متفق عليه: رواه البخاري (5362) ومسلم (2727)'
+    },
+    {
+        id: 'n14c',
+        text: 'الله أكبر',
+        surah: '',
+        virtue: 'تسبيح فاطمة رضي الله عنها عند النوم — التكبير',
+        count: 34,
+        category: 'night',
+        points: 3,
         reference: 'متفق عليه: رواه البخاري (5362) ومسلم (2727)'
     },
     {
@@ -989,26 +1010,22 @@ export const DEFAULT_PODCASTS = [
         icon: 'fa-book-open',
         note: 'قناة تهتم بالتفسير والتدبر والبناء الإيماني، محتوى هادف.'
     },
-
-
     {
-        id: 'pod9',
+        id: 'pod8',
         name: 'محمد الغليظ',
         url: 'https://www.youtube.com/@mohelghaleez/videos',
         icon: 'fa-podcast',
         note: 'قناة دعوية ناشطة. نلاحظ أن بعض محتواها قد يتعرض للحذف من يوتيوب، ولكن لا يوجد ما يشير إلى مخالفات شرعية صريحة. يُنصح بمتابعتها مع الانتباه.'
     },
     {
-        id: 'pod10',
+        id: 'pod9',
         name: 'أمجد سمير',
         url: 'https://www.youtube.com/@amgad_samir/videos',
         icon: 'fa-microphone',
         note: 'مهتم بالتربية الإيمانية والرقائق، له أسلوب مؤثر.'
     },
-
-
     {
-        id: 'pod13',
+        id: 'pod10',
         name: 'AHMED AZAM ديني',
         url: 'https://www.youtube.com/@ahmedazam0/videos',
         icon: 'fa-mosque',

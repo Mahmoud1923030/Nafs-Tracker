@@ -29,7 +29,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/Mahmoud1923030/Nafs-Tracker/issues"
   },
