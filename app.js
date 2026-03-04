@@ -35,6 +35,17 @@ db.settings({
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
+// Handle auth redirect results (fallback for popup-blocked)
+try {
+    auth.getRedirectResult().catch((e) => {
+        if (e?.code && e.code !== 'auth/no-auth-event') {
+            showToast('فشل تسجيل الدخول: ' + e.message, 'error');
+        }
+    });
+} catch (e) {
+    // ignore if redirect flow isn't supported
+}
+
 // Use LOCAL persistence so the user stays logged in across sessions
 try {
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => { });
@@ -1084,6 +1095,15 @@ window.signInWithGoogle = async function () {
     try {
         await auth.signInWithPopup(googleProvider);
     } catch (e) {
+        if (e?.code === 'auth/popup-blocked') {
+            try {
+                await auth.signInWithRedirect(googleProvider);
+                return;
+            } catch (redirectErr) {
+                showToast('فشل تسجيل الدخول: ' + redirectErr.message, 'error');
+                return;
+            }
+        }
         showToast('فشل تسجيل الدخول: ' + e.message, 'error');
     }
 };
